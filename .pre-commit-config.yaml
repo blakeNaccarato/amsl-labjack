@@ -1,0 +1,79 @@
+exclude: |
+  (?x)^(
+    \.crates2.json
+  )$
+ci:
+  skip:
+    - "fawltydeps-dev"
+    - "fawltydeps-amsl-labjack"
+    - "fawltydeps-hello"
+    - "pytest"
+  autoupdate_schedule: "quarterly"
+repos:
+  - repo: "local"
+    hooks:
+      - id: "fawltydeps-dev"
+        name: "fawltydeps-dev"
+        pass_filenames: false
+        language: "system"
+        entry: "pwsh -NonInteractive -NoProfile -Command './j.ps1 fawltydeps --config-file packages/_dev/pyproject.toml'"
+        files: |
+          (?x)^(
+            packages/_dev/.*
+          )$
+      - id: "fawltydeps-amsl-labjack"
+        name: "fawltydeps-amsl-labjack"
+        pass_filenames: false
+        language: "system"
+        entry: "pwsh -NonInteractive -NoProfile -Command './j.ps1 fawltydeps --config-file packages/amsl-labjack/pyproject.toml'"
+        files: |
+          (?x)^(
+            packages/amsl-labjack/.*
+          )$
+      - id: "fawltydeps-hello"
+        name: "fawltydeps-hello"
+        pass_filenames: false
+        language: "system"
+        entry: "pwsh -NonInteractive -NoProfile -Command './j.ps1 fawltydeps --config-file packages/hello/pyproject.toml'"
+        files: |
+          (?x)^(
+            packages/hello/.*
+          )$
+      - id: "pytest"
+        name: "pytest"
+        always_run: true
+        pass_filenames: false
+        language: "system"
+        entry: "uv --preview run pytest"
+  - repo: "https://github.com/pre-commit/pre-commit-hooks"
+    rev: "v5.0.0"
+    hooks:
+      - id: "check-illegal-windows-names"
+      - id: "check-merge-conflict"
+      - id: "destroyed-symlinks"
+      - id: "detect-private-key"
+      - id: "end-of-file-fixer"
+      - id: "mixed-line-ending"
+      - id: "trailing-whitespace"
+        args: [--markdown-linebreak-ext=md]
+      - id: "trailing-whitespace"
+  - repo: "https://github.com/DavidAnson/markdownlint-cli2"
+    rev: "v0.13.0"
+    hooks:
+      - id: "markdownlint-cli2"
+  - repo: "https://github.com/rbubley/mirrors-prettier"
+    rev: "v3.5.1"
+    hooks:
+      - id: prettier
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: taplo-format
+  - repo: "https://github.com/charliermarsh/ruff-pre-commit"
+    rev: "v0.9.3"
+    hooks:
+      - id: "ruff"
+        args: ["--extend-fixable", "PIE790"]
+        types_or: ["python", "pyi", "jupyter"]
+      - id: "ruff-format"
+        types_or: ["python", "pyi", "jupyter"]

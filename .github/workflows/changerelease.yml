@@ -1,0 +1,25 @@
+# Sync GitHub release notes with the changelog
+name: "changerelease"
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: True
+on:
+  workflow_dispatch:
+  workflow_call:
+  push:
+    branches: ["main"]
+    paths: ["CHANGELOG.md"]
+defaults:
+  run:
+    shell: "pwsh"
+jobs:
+  changerelease:
+    continue-on-error: true
+    permissions:
+      contents: "write"
+    runs-on: "ubuntu-22.04"
+    steps:
+      - uses: "dropseed/changerelease@3b121c9e98fa055f59a32b023cb4fd2325f4d9dc" # v1.6.0
+        with:
+          github_token: "${{ github.token }}"
+          tag_prefix: ""

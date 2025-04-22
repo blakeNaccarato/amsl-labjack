@@ -1,0 +1,7 @@
+#? Prettier clobbers Myst-specific syntax in notebooks
+*.py
+*.ipynb
+#? Markdownlint handles this
+*.md
+#? Don't traverse typings
+typings

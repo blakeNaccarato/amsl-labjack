@@ -1,0 +1,17 @@
+[build-system]
+requires = ["uv-build==0.6.16"]
+build-backend = "uv_build"
+
+[project]
+name = "amsl-labjack-dev"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = ["cappa>=0.26.4", "dulwich>=0.22.1"]
+[project.scripts]
+"amsl-labjack-dev" = "amsl_labjack_dev.__main__:main"
+
+[tool.fawltydeps]
+deps = ["packages/_dev/pyproject.toml"]
+code = ["packages/_dev", "tests"]
+ignore_undeclared = ["amsl_labjack"]
+[tool.fawltydeps.custom_mapping]

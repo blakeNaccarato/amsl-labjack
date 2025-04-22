@@ -1,0 +1,85 @@
+{
+  "version": "0.2.0",
+  "inputs": [
+    {
+      "id": "input",
+      "type": "promptString",
+      "description": "Input."
+    },
+    {
+      "id": "input1",
+      "type": "promptString",
+      "description": "1st arg."
+    },
+    {
+      "id": "input2",
+      "type": "promptString",
+      "description": "2nd arg."
+    },
+    {
+      "id": "input3",
+      "type": "promptString",
+      "description": "3rd arg."
+    }
+  ],
+  "configurations": [
+    {
+      "name": "Python: Current file",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "internalConsole"
+    },
+    {
+      "name": "Python: Current file (interactive terminal)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}"
+    },
+    {
+      "name": "Python: Current file with 1 arg",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "args": ["${input:input}"],
+      "console": "internalConsole"
+    },
+    {
+      "name": "Python: Current file with 2 args",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "args": ["${input:input1}", "${input:input2}"],
+      "console": "internalConsole"
+    },
+    {
+      "name": "Python: Current file with 3 args",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "args": ["${input:input1}", "${input:input2}", "${input:input3}"],
+      "console": "internalConsole"
+    },
+    {
+      "name": "PowerShell: Launch Current File",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${file}"
+    },
+    {
+      //? https://github.com/microsoft/vscode-python-debugger/issues/335
+      "name": "pytest",
+      //! Uncomment below to disable "justMyCode" when debugging. Comment out after.
+      // "purpose": ["debug-test"],
+      //!
+      "presentation": {
+        "hidden": true
+      },
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "internalConsole",
+      "justMyCode": false
+    }
+  ]
+}

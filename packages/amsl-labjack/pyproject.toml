@@ -1,0 +1,29 @@
+[build-system]
+requires = ["uv-build==0.6.16"]
+build-backend = "uv_build"
+
+[project]
+name = "amsl-labjack"
+version = "0.0.0"
+authors = [{ name = "Blake Naccarato", email = "blake.naccarato@gmail.com" }]
+description = "Build and sign Python binaries"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12"
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = []
+[project.urls]
+Changes = "https://blakeNaccarato.github.io/amsl-labjack/changelog.html"
+Docs = "https://blakeNaccarato.github.io/amsl-labjack"
+Home = "https://github.com/blakeNaccarato/amsl-labjack"
+Tracker = "https://github.com/blakeNaccarato/amsl-labjack/issues"
+
+[tool.fawltydeps]
+deps = ["packages/amsl-labjack/pyproject.toml"]
+code = ["packages/amsl-labjack"]
+exclude = [".*", "pyapp"]
+[project.scripts]
+"amsl-labjack" = "amsl_labjack.__main__:main"

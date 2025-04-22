@@ -1,0 +1,144 @@
+{
+  "version": "2.0.0",
+  "type": "shell",
+  "problemMatcher": ["$python"],
+  "inputs": [
+    {
+      "id": "args",
+      "description": "Recipe arguments",
+      "type": "promptString",
+      "default": ""
+    },
+    {
+      "id": "python",
+      "type": "pickString",
+      "description": "Python recipe to run",
+      "default": "",
+      "options": ["", "script", "gui-script", "module"]
+    },
+    {
+      "id": "tool",
+      "type": "pickString",
+      "description": "Tool recipe to run",
+      "options": [
+        "pre-commit",
+        "pyright",
+        "ruff",
+        "pytest",
+        "docs-preview",
+        "docs-build"
+      ]
+    },
+    {
+      "id": "packaging",
+      "type": "pickString",
+      "description": "Packaging recipe to run",
+      "options": ["build", "release"]
+    },
+    {
+      "id": "setup",
+      "type": "pickString",
+      "description": "Machine setup recipe to run",
+      "options": ["scripts", "git", "git-recs", "gh"]
+    },
+    {
+      "id": "name",
+      "type": "promptString",
+      "description": "Git setup: Enter your GitHub username"
+    },
+    {
+      "id": "email",
+      "type": "promptString",
+      "description": "Git setup: Enter the email address associated with your GitHub account"
+    }
+  ],
+  "tasks": [
+    {
+      "label": "Contributor environment setup",
+      "detail": "Set up the contributor environment",
+      "icon": { "color": "terminal.ansiYellow", "id": "star-full" },
+      "command": "./j.ps1 con",
+      "runOptions": { "runOn": "folderOpen" }
+    },
+    {
+      "label": "Run",
+      "detail": "Run a shell command",
+      "icon": { "color": "terminal.ansiCyan", "id": "run" },
+      "command": "./j.ps1 run ${input:args}"
+    },
+    {
+      "label": "uv",
+      "detail": "Run uv",
+      "icon": { "color": "terminal.ansiMagenta", "id": "star-full" },
+      "command": "./j.ps1 uv ${input:args}"
+    },
+    {
+      "label": "uv run",
+      "detail": "Run something with uv",
+      "icon": { "color": "terminal.ansiMagenta", "id": "run" },
+      "command": "./j.ps1 uv-run ${input:args}"
+    },
+    {
+      "label": "uv sync (with args)",
+      "detail": "Sync the contributor environment",
+      "icon": { "color": "terminal.ansiMagenta", "id": "sync" },
+      "command": "./j.ps1 uv-sync ${input:args}"
+    },
+    {
+      "label": "Python",
+      "detail": "Run a Python recipe",
+      "icon": { "color": "terminal.ansiYellow", "id": "snake" },
+      "command": "./j.ps1 py-${input:python} ${input:args}"
+    },
+    {
+      "label": "Packaging",
+      "detail": "Run a Packaging recipe",
+      "icon": { "color": "terminal.ansiRed", "id": "package" },
+      "command": "./j.ps1 pkg-${input:python} ${input:args}"
+    },
+    {
+      "label": "Build",
+      "detail": "Run the default build recipe",
+      "icon": { "color": "terminal.ansiRed", "id": "package" },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "command": "./j.ps1 pkg-build"
+    },
+    {
+      "label": "Test",
+      "detail": "Run the default test recipe",
+      "command": "./j.ps1 tool-pytest",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "icon": { "color": "terminal.ansiGreen", "id": "beaker" }
+    },
+    {
+      "label": "Tool",
+      "detail": "Run a tool recipe",
+      "command": "./j.ps1 tool-${input:tool}",
+      "icon": { "id": "gear" }
+    },
+    {
+      "label": "Pre-commit (all-files)",
+      "detail": "Run pre-commit on all files",
+      "command": "./j.ps1 tool-pre-commit --all-files",
+      "icon": { "id": "gear" }
+    },
+    {
+      "label": "Machine setup",
+      "detail": "Run machine setup recipes",
+      "icon": { "id": "device-desktop" },
+      "command": "./j.ps1 setup-${input:setup} ${input:args}"
+    },
+    {
+      "label": "Machine setup: Git",
+      "detail": "Set up Git",
+      "icon": { "id": "device-desktop" },
+      "command": "./j.ps1 setup-git ${input:name} ${input:email}"
+    }
+  ]
+}
