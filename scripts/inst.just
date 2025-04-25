@@ -24,6 +24,8 @@ _installed :=\
   'already installed.'
 
 #* Installers
+_just_inst :=\
+  _just + sp + '--justfile' + sp + quote('scripts/inst.just') + sp
 win_inst :=\
   pre \
   + sp + 'winget install' \
@@ -55,60 +57,21 @@ end_snap :=\
 _linux_pre :=\
   pre + sp + sudo
 
-_just_inst :=\
-  _just + sp + '--justfile' + sp + quote('scripts/inst.just') + sp
-
 #* Linux package managers
 pkg_bin :=\
   which('apt') || which('dnf') || null
 sudo :=\
   'sudo' + sp
 
-# 🌐 Install all
-[group('🌐 Install')]
+# 🌐 [DEFAULT] Install Homebrew as needed, then install VSCode, GitHub CLI, Git, and cross-platform PowerShell.
+[macos,group('🌐 Install')]
 all: code git gh pwsh wt
-
-# 🌐 Install cross-platform PowerShell, the shell used for all non-install recipes.
-[group('🌐 Install')]
-pwsh:
-  @{{ if pwsh_found==true { _pwsh_found_msg } else { empty } }}
-  {{ if pwsh_found==false { inst_pwsh } else { empty } }}
-pwsh_found :=\
-  if pwsh_bin!=null { true } else { false }
-inst_pwsh :=\
-  _just_inst + 'brew snap;' + sp \
-  + ( \
-    if os_family()=='windows' { win_inst + quote('Microsoft.PowerShell') } else { empty } \
-    || if os()=='macos' { mac_inst + quote('powershell/tap/powershell') } else { empty } \
-    || linux_inst_snap + quote('powershell') + end_snap\
-  )
-pwsh_bin :=\
-  which('pwsh' + bin_ext) || null
-_pwsh_found_msg :=\
-  quote(GREEN+_pwsh_name+sp+_installed+NORMAL)
-_pwsh_name :=\
-  'Cross-platform PowerShell (pwsh)'
-
-# 🌐 Install GitHub CLI.
-[group('🌐 Install')]
-gh:
-  @{{ if gh_found==true { _gh_found_msg } else { empty } }}
-  {{ if gh_found==false { inst_gh } else { empty } }}
-gh_found :=\
-  if gh_bin!=null { true } else { false }
-inst_gh :=\
-  _just_inst + 'brew;' + sp \
-  + ( \
-    if os_family()=='windows' { win_inst + quote('GitHub.cli') } else { empty } \
-    || if os()=='macos' { mac_inst + 'gh' } else { empty } \
-    || linux_inst + 'gh'\
-  )
-gh_bin :=\
-  which('gh' + bin_ext) || null
-_gh_found_msg :=\
-  quote(GREEN+_gh_name+sp+_installed+NORMAL)
-_gh_name :=\
-  'GitHub CLI'
+# 🌐 [DEFAULT] Install Snap as needed, then install VSCode, GitHub CLI, Git, and cross-platform PowerShell.
+[linux, group('🌐 Install')]
+all: code git gh pwsh wt
+# 🌐 [DEFAULT] Install VSCode, GitHub CLI, Git, Windows Terminal, and cross-platform PowerShell.
+[windows, group('🌐 Install')]
+all: code git gh pwsh wt
 
 # 🌐 Install VSCode.
 [group('🌐 Install')]
@@ -122,7 +85,7 @@ inst_code :=\
   + ( \
     if os_family()=='windows' { win_inst + quote('Microsoft.VisualStudioCode') } else { empty } \
     || if os()=='macos' { mac_inst_cask + quote('visual-studio-code') } else { empty } \
-    || linux_inst_snap + quote('code') + end_snap\
+    || linux_inst_snap + quote('code') + end_snap \
   )
 code_bin :=\
   which('code' + bin_ext) || which('code' + cmd_ext) || null
@@ -131,51 +94,26 @@ _code_found_msg :=\
 _code_name :=\
   'VSCode'
 
-# 🌐 Install Windows Terminal.
-[windows, group('🌐 Install')]
-wt:
-  @{{ if wt_found==true { _wt_found_msg } else { empty } }}
-  {{ if wt_found==false { inst_wt } else { empty } }}
-wt_found :=\
-  if wt_bin!=null { true } else { false }
-inst_wt :=\
-  win_inst + quote('Microsoft.WindowsTerminal')
-wt_bin :=\
-  which('wt.exe') || null
-_wt_found_msg :=\
-  quote(GREEN+_wt_name+sp+_installed+NORMAL)
-_wt_name :=\
-  'Windows Terminal'
-# ❌ Install Windows Terminal.
-[linux, macos, group('❌ N/A for this OS')]
-wt:
-  @{{quote(GREEN+_wt_name+sp+_na+NORMAL)}}
-
-# 🌐 Install a project version of uv if you've got global uv
+# 🌐 Install GitHub CLI.
 [group('🌐 Install')]
-uv:
-  @{{ if uv_found==true { _uv_found_msg } else { empty } }}
-  {{ if uv_found==false { inst_uv } else { empty } }}
-inst_uv :=\
-  if os_family()=='windows' { inst_uv_win } else { empty } \
-  || inst_uv_unix
-uv_found :=\
-  if uv_bin!=null { true } else { false }
-uv_bin :=\
-  if path_exists('./uv' + bin_ext)==true { './uv' + bin_ext } else { empty } \
-  || null
-_uv_bin :=\
-  './uv' + bin_ext
-inst_uv_win :=\
-  pre + sp + 'Invoke-RestMethod' + sp + _inst_uv_script + sp + '| Invoke-Expression'
-inst_uv_unix :=\
-  pre + sp + "curl --proto '=https' --tlsv1.2 -LsSf" + sp + _inst_uv_script
-_inst_uv_script :=\
-  quote('https://astral.sh/uv/' + uv_version + '/install' + sh_ext)
-_uv_found_msg :=\
-  quote(GREEN+_uv_name+sp+_installed+NORMAL)
-_uv_name :=\
-  'uv'
+gh:
+  @{{ if gh_found==true { _gh_found_msg } else { empty } }}
+  {{ if gh_found==false { inst_gh } else { empty } }}
+gh_found :=\
+  if gh_bin!=null { true } else { false }
+inst_gh :=\
+  _just_inst + 'brew;' + sp \
+  + ( \
+    if os_family()=='windows' { win_inst + quote('GitHub.cli') } else { empty } \
+    || if os()=='macos' { mac_inst + 'gh' } else { empty } \
+    || linux_inst + 'gh' \
+  )
+gh_bin :=\
+  which('gh' + bin_ext) || null
+_gh_found_msg :=\
+  quote(GREEN+_gh_name+sp+_installed+NORMAL)
+_gh_name :=\
+  'GitHub CLI'
 
 # 🌐 Install Git.
 [group('🌐 Install')]
@@ -230,6 +168,73 @@ _git_found_msg :=\
 _git_name :=\
   'Git'
 
+# 🌐 Install cross-platform PowerShell, the shell used for all non-install recipes.
+[group('🌐 Install')]
+pwsh:
+  @{{ if pwsh_found==true { _pwsh_found_msg } else { empty } }}
+  {{ if pwsh_found==false { inst_pwsh } else { empty } }}
+pwsh_found :=\
+  if pwsh_bin!=null { true } else { false }
+inst_pwsh :=\
+  _just_inst + 'brew snap;' + sp \
+  + ( \
+    if os_family()=='windows' { win_inst + quote('Microsoft.PowerShell') } else { empty } \
+    || if os()=='macos' { mac_inst + quote('powershell/tap/powershell') } else { empty } \
+    || linux_inst_snap + quote('powershell') + end_snap \
+  )
+pwsh_bin :=\
+  which('pwsh' + bin_ext) || null
+_pwsh_found_msg :=\
+  quote(GREEN+_pwsh_name+sp+_installed+NORMAL)
+_pwsh_name :=\
+  'Cross-platform PowerShell (pwsh)'
+
+# 🌐 Install a project version of uv if you've got global uv
+[group('🌐 Install')]
+uv:
+  @{{ if uv_found==true { _uv_found_msg } else { empty } }}
+  {{ if uv_found==false { inst_uv } else { empty } }}
+inst_uv :=\
+  if os_family()=='windows' { inst_uv_win } else { empty } \
+  || inst_uv_unix
+uv_found :=\
+  if uv_bin!=null { true } else { false }
+uv_bin :=\
+  if path_exists('./uv' + bin_ext)==true { './uv' + bin_ext } else { empty } \
+  || null
+_uv_bin :=\
+  './uv' + bin_ext
+inst_uv_win :=\
+  pre + sp + 'Invoke-RestMethod' + sp + _inst_uv_script + sp + '| Invoke-Expression'
+inst_uv_unix :=\
+  pre + sp + "curl --proto '=https' --tlsv1.2 -LsSf" + sp + _inst_uv_script
+_inst_uv_script :=\
+  quote('https://astral.sh/uv/' + uv_version + '/install' + sh_ext)
+_uv_found_msg :=\
+  quote(GREEN+_uv_name+sp+_installed+NORMAL)
+_uv_name :=\
+  'uv'
+
+# 🌐 Install Windows Terminal.
+[windows, group('🌐 Install')]
+wt:
+  @{{ if wt_found==true { _wt_found_msg } else { empty } }}
+  {{ if wt_found==false { inst_wt } else { empty } }}
+wt_found :=\
+  if wt_bin!=null { true } else { false }
+inst_wt :=\
+  win_inst + quote('Microsoft.WindowsTerminal')
+wt_bin :=\
+  which('wt.exe') || null
+_wt_found_msg :=\
+  quote(GREEN+_wt_name+sp+_installed+NORMAL)
+_wt_name :=\
+  'Windows Terminal'
+# ❌ Install Windows Terminal.
+[linux, macos, group('❌ Install (N/A for this OS)')]
+wt:
+  @{{quote(GREEN+_wt_name+sp+_na+NORMAL)}}
+
 # 🌐 Install Snap.
 [script, linux, group('🌐 Install')]
 @snap:
@@ -277,9 +282,11 @@ snap_bin :=\
   || if path_exists('/usr/bin/snap')==true { '/usr/bin/snap' } else { empty } \
   || null
 # ❌ Install Snap.
-[windows, macos, group('❌ N/A for this OS')]
+[windows, macos, group('❌ Install (N/A for this OS)')]
 snap:
-  @{{quote(GREEN+snap_name+sp+_na+NORMAL)}}
+  @{{_snap_found_msg}}
+_snap_found_msg :=\
+  quote(GREEN+_brew_name+sp+_installed+NORMAL)
 snap_name :=\
   'Snap'
 
@@ -298,9 +305,9 @@ brew_bin :=\
   || if path_exists('/opt/homebrew/bin/brew')==true { '/opt/homebrew/bin/brew' } else { empty } \
   || null
 # ❌ Install Homebrew.
-[windows, linux, group('❌ N/A for this OS')]
+[windows, linux, group('❌ Install (N/A for this OS)')]
 brew:
-  @{{quote(GREEN+_brew_name+sp+_na+NORMAL)}}
+  @{{_brew_found_msg}}
 _brew_found_msg :=\
   quote(GREEN+_brew_name+sp+_installed+NORMAL)
 _brew_name :=\

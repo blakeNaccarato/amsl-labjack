@@ -25,27 +25,39 @@ pre :=\
 script_pre :=\
   pwsh_pre
 
+#* Python dev package
+_dev :=\
+  _uvr + sp + quote(name + '-dev')
+
 #* ♾️  Self
 
-#? Also the default recipe, as it is the first recipe in the file
-# 📃 List recipes.
+# 📃 [DEFAULT] List recipes.
 [group('♾️  Self')]
 list:
   {{pre}} {{_just}} --list
+alias l := list
 
-# #* ⛰️ Environments
+# ♾️  Run Just.
+[group('♾️  Self')]
+just *args:
+  {{pre}} {{_just}} {{args}}
+alias j := just
+
+#* ⛰️ Environments
 
 # 🏃 Run shell command with UV synced.
 [group('⛰️ Environments')]
-run *args="Write-Host 'No command given' -ForeGroundColor Yellow": uv-sync
-  {{ pre + sp + args }}
+run *args: uv-sync
+  @{{ if args==empty { quote(YELLOW+'No command given'+NORMAL) } else {empty} }}
+  {{ if args!=empty { pre + sp + args } else {empty} }}
 alias r := run
 
 # 👥 Run recipe as a contributor.
 [group('⛰️ Environments')]
 con *args: con-pre-commit-hooks uv-sync
   {{pre}} Sync-ContribEnv
-  {{ if args==empty { empty } else { pre + _just + sp + args } }}
+  @{{ if args==empty {_no_recipe_given} else {empty} }}
+  {{ if args!=empty { pre + _just + sp + args } else {empty} }}
 alias c := con
 
 # 🤖 Run recipes in CI.
@@ -53,7 +65,7 @@ alias c := con
 ci *args: uv-sync
   {{pre}} Sync-CiEnv
   {{pre}} {{_dev}} elevate-pyright-warnings
-  {{ if args==empty { empty } else { _just + sp + args } }}
+  {{ if args!=empty { pre + _just + sp + args } else {empty} }}
 
 # 📦 Run recipes in a devcontainer.
 [script, group('⛰️ Environments')]
@@ -68,8 +80,11 @@ ci *args: uv-sync
     if (!($SafeDirs -contains $Dir)) { git config --global --add safe.directory $Dir }
   }
   {{ if args==empty { 'return' } else { '#?'+BLUE+sp+'Run recipe'+NORMAL } }}
-  {{ if args==empty { empty } else { _just + sp + args } }}
+  {{ if args==empty {empty} else { _just + sp + args } }}
 alias dc := devcontainer
+
+_no_recipe_given :=\
+  quote(BLACK+'No recipe given'+NORMAL)
 
 #* 🟣 uv
 
@@ -77,7 +92,7 @@ alias dc := devcontainer
 _uv_options :=\
   '--all-packages' \
   + sp + '--python' + ( \
-    if python_version==empty { empty } else { sp + quote(python_version) } \
+    if python_version==empty {empty} else { sp + quote(python_version) } \
   )
 _uvr :=\
   _uv + sp + 'run' + sp + _uv_options
@@ -95,7 +110,7 @@ uv-run *args:
   {{pre}} {{_uvr}} {{args}}
 alias uvr := uv-run
 
-# ♻️ uv sync ...
+# ♻️  uv sync ...
 [group('🟣 uv')]
 uv-sync *args:
   {{pre}} {{_uvs}} {{args}}
@@ -110,22 +125,6 @@ py *args:
   {{pre}} {{_uvr}} 'python' {{args}}
 alias py- := py
 
-# 📄 uv run --script ...
-[group('🐍 Python')]
-py-script script *args:
-  {{pre}} {{_uvr}} '--script' {{quote(script)}} {{args}}
-alias pys := py-script
-
-# 📺 uv run --gui-script ...
-[windows, group('🐍 Python')]
-py-gui-script script *args:
-  {{pre}} {{_uvr}} '--gui-script' {{quote(script)}} {{args}}
-alias pyg := py-gui-script
-# ❌ uv run --gui-script ...
-[linux, macos, group('❌ N/A for this OS')]
-py-gui-script:
-  @{{quote(GREEN+'GUI scripts'+sp+_na+NORMAL)}}
-
 # 📦 uv run --module ...
 [group('🐍 Python')]
 py-module module *args:
@@ -138,16 +137,49 @@ py-command cmd:
   {{pre}} {{_uvr}} 'python' '-c' {{quote(cmd)}}
 alias pyc := py-command
 
+# 📄 uv run --script ...
+[group('🐍 Python')]
+py-script script *args:
+  {{pre}} {{_uvr}} '--script' {{quote(script)}} {{args}}
+alias pys := py-script
+
+# 📺 uv run --gui-script ...
+[windows, group('🐍 Python')]
+py-gui script *args:
+  {{pre}} {{_uvr}} '--gui-script' {{quote(script)}} {{args}}
+alias pyg := py-gui
+# ❌ uv run --gui-script ...
+[linux, macos, group('❌ Python (N/A for this OS)')]
+py-gui:
+  @{{quote(GREEN+'GUI scripts'+sp+_na+NORMAL)}}
+
 #* ⚙️ Tools
 
-# ✔️  pre-commit run ...
+# 🧪 pytest
+[group('⚙️  Tools')]
+tool-pytest *args:
+  {{pre}} {{_uvr}} pytest {{args}}
+alias pytest := tool-pytest
+
+# 📖 docs
+[group('⚙️  Tools')]
+tool-docs-preview:
+  {{pre}} {{_uvr}} sphinx-autobuild --show-traceback docs _site \
+    {{ prepend( '--ignore', "'**/temp' '**/data' '**/apidocs' '**/*schema.json'" ) }}
+
+# 📖 docs
+[group('⚙️  Tools')]
+tool-docs-build:
+  {{pre}} {{_uvr}} sphinx-build 'docs' '_site'
+
+# 🔵 pre-commit run ...
 [group('⚙️  Tools')]
 tool-pre-commit *args: con
   {{pre}} {{_uvr}} pre-commit run --verbose {{args}}
 alias pre-commit := tool-pre-commit
 alias pc := tool-pre-commit
 
-# ✔️  pre-commit run --all-files ...
+# 🔵 pre-commit run --all-files ...
 [group('⚙️  Tools')]
 tool-pre-commit-all *args:
   {{pre}} {{_just}} pre-commit --all-files {{args}}
@@ -172,23 +204,6 @@ tool-ruff *args:
   {{pre}} {{_uvr}} ruff check {{args}} .
 alias ruff := tool-ruff
 
-# 🧪 pytest
-[group('⚙️  Tools')]
-tool-pytest *args:
-  {{pre}} {{_uvr}} pytest {{args}}
-alias pytest := tool-pytest
-
-# 📖 docs
-[group('⚙️  Tools')]
-tool-docs-preview:
-  {{pre}} {{_uvr}} sphinx-autobuild --show-traceback docs _site \
-    {{ prepend( '--ignore', "'**/temp' '**/data' '**/apidocs' '**/*schema.json'" ) }}
-
-# 📖 docs
-[group('⚙️  Tools')]
-tool-docs-build:
-  {{pre}} {{_uvr}} sphinx-build 'docs' '_site'
-
 #* 📦 Packaging
 
 # 🛞  Build wheel, compile binary, and sign.
@@ -204,9 +219,6 @@ pkg-release version:
 alias release := pkg-release
 
 #* 👥 Contributor environment setup
-
-_dev :=\
-  _uvr + sp + quote(name + '-dev')
 
 # 👥 Update Git submodules.
 [group('👥 Contributor environment setup')]
@@ -241,13 +253,9 @@ con-norm-line-endings:
 con-dev *args:
   {{pre}} {{_dev}} {{args}}
 alias dev := con-dev
+alias d := con-dev
 
 #* 💻 Machine setup
-
-# 🔓 Allow running local PowerShell scripts.
-[windows, group('💻 Machine setup')]
-setup-scripts:
-  {{pre}} Set-ExecutionPolicy -Scope 'CurrentUser' 'RemoteSigned'
 
 # 👤 Set Git username and email.
 [group('💻 Machine setup')]
@@ -267,3 +275,12 @@ setup-git-recs:
 [group('💻 Machine setup')]
 setup-gh:
   {{pre}} gh auth login
+
+# 🔓 Allow running local PowerShell scripts.
+[windows, group('💻 Machine setup')]
+setup-scripts:
+  {{pre}} Set-ExecutionPolicy -Scope 'CurrentUser' 'RemoteSigned'
+# ❌ Allow running local PowerShell scripts.
+[linux, macos, group('❌ Machine setup (N/A for this OS)')]
+setup-scripts:
+  @{{quote(GREEN+'Allowing local PowerShell scripts to run'+sp+_na+NORMAL)}}
