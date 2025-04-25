@@ -10,6 +10,13 @@
       "default": ""
     },
     {
+      "id": "pkg",
+      "type": "pickString",
+      "description": "Packaging recipe to run",
+      "default": "",
+      "options": ["build", "release"]
+    },
+    {
       "id": "python",
       "type": "pickString",
       "description": "Python recipe to run",
@@ -94,7 +101,7 @@
       "label": "Packaging",
       "detail": "Run a Packaging recipe",
       "icon": { "color": "terminal.ansiRed", "id": "package" },
-      "command": "./j.ps1 pkg-${input:python} ${input:args}"
+      "command": "./j.ps1 pkg-${input:pkg} ${input:args}"
     },
     {
       "label": "Build",
