@@ -4,13 +4,22 @@ exclude: |
   )$
 ci:
   skip:
+    - "fawltydeps"
     - "fawltydeps-dev"
-    - "fawltydeps-amsl-labjack"
     - "pytest"
   autoupdate_schedule: "quarterly"
 repos:
   - repo: "local"
     hooks:
+      - id: "fawltydeps"
+        name: "fawltydeps"
+        pass_filenames: false
+        language: "system"
+        entry: "pwsh -NonInteractive -NoProfile -Command './j.ps1 fawltydeps'"
+        files: |
+          (?x)^(
+            src/.*
+          )$
       - id: "fawltydeps-dev"
         name: "fawltydeps-dev"
         pass_filenames: false
@@ -19,15 +28,6 @@ repos:
         files: |
           (?x)^(
             packages/_dev/.*
-          )$
-      - id: "fawltydeps-amsl-labjack"
-        name: "fawltydeps-amsl-labjack"
-        pass_filenames: false
-        language: "system"
-        entry: "pwsh -NonInteractive -NoProfile -Command './j.ps1 fawltydeps --config-file packages/amsl-labjack/pyproject.toml'"
-        files: |
-          (?x)^(
-            packages/amsl-labjack/.*
           )$
       - id: "pytest"
         name: "pytest"

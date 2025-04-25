@@ -1,12 +1,28 @@
+[build-system]
+requires = ["uv-build==0.6.16"]
+build-backend = "uv_build"
+
 [project]
-name = "amsl-labjack-root"
+name = "amsl-labjack"
 version = "0.0.0"
+authors = [{ name = "Blake Naccarato", email = "blake.naccarato@gmail.com" }]
+description = "Build and sign Python binaries"
+readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.12"
-dependencies = ["cappa>=0.26.4"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = ["dwfpy>=1.2.0"]
+[project.urls]
+Changes = "https://blakeNaccarato.github.io/amsl-labjack/changelog.html"
+Docs = "https://blakeNaccarato.github.io/amsl-labjack"
+Home = "https://github.com/blakeNaccarato/amsl-labjack"
+Tracker = "https://github.com/blakeNaccarato/amsl-labjack/issues"
 
 [dependency-groups]
 dev = [
-  "check-wheel-contents>=0.6.1",
   "fawltydeps>=0.18.0",
   "ipykernel>=6.29.5",
   "pre-commit>=4.1.0",
@@ -21,7 +37,6 @@ dev = [
 required-version = "==0.6.16"
 [tool.uv.sources]
 amsl-labjack-dev = { workspace = true }
-amsl-labjack = { workspace = true }
 hello = { workspace = true }
 [tool.uv.workspace]
 members = ["packages/*"]
@@ -30,7 +45,11 @@ members = ["packages/*"]
 exclude_also = ['if __name__ == "__main__":']
 [tool.coverage.run]
 branch = true
-source = ["amsl-labjack", "amsl-labjack-dev", "hello", "tests"]
+source = ["amsl-labjack", "tests"]
+
+[tool.fawltydeps]
+deps = ["pyproject.toml"]
+code = ["src"]
 
 [tool.pytest.ini_options]
 addopts = """
