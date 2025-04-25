@@ -37,7 +37,7 @@ list:
   {{pre}} {{_just}} --list
 alias l := list
 
-# ♾️  Run Just.
+# ♾️  Run Just recipes...
 [group('♾️  Self')]
 just *args:
   {{pre}} {{_just}} {{args}}
@@ -45,14 +45,14 @@ alias j := just
 
 #* ⛰️ Environments
 
-# 🏃 Run shell command with UV synced.
+# 🏃 Run shell commands with UV synced...
 [group('⛰️ Environments')]
 run *args: uv-sync
   @{{ if args==empty { quote(YELLOW+'No command given'+NORMAL) } else {empty} }}
   {{ if args!=empty { pre + sp + args } else {empty} }}
 alias r := run
 
-# 👥 Run recipe as a contributor.
+# 👥 Run recipes as a contributor...
 [group('⛰️ Environments')]
 con *args: con-pre-commit-hooks uv-sync
   {{pre}} Sync-ContribEnv
@@ -60,7 +60,7 @@ con *args: con-pre-commit-hooks uv-sync
   {{ if args!=empty { pre + _just + sp + args } else {empty} }}
 alias c := con
 
-# 🤖 Run recipes in CI.
+# 🤖 Run recipes in CI...
 [group('⛰️ Environments')]
 ci *args: uv-sync
   {{pre}} Sync-CiEnv
@@ -99,7 +99,7 @@ _uvr :=\
 _uvs :=\
   _uv + sp + 'sync' + sp + _uv_options
 
-# 🟣 uv
+# 🟣 uv ...
 [group('🟣 uv')]
 uv *args:
   {{pre}} {{_uv}} {{args}}
@@ -155,7 +155,7 @@ py-gui:
 
 #* ⚙️ Tools
 
-# 🧪 pytest
+# 🧪 pytest ...
 [group('⚙️  Tools')]
 tool-pytest *args:
   {{pre}} {{_uvr}} pytest {{args}}
@@ -198,7 +198,7 @@ tool-pyright:
   {{pre}} {{_uvr}} pyright
 alias pyright := tool-pyright
 
-# ✔️  ruff check <args> '.'
+# ✔️  ruff check ... '.'
 [group('⚙️  Tools')]
 tool-ruff *args:
   {{pre}} {{_uvr}} ruff check {{args}} .
@@ -206,7 +206,7 @@ alias ruff := tool-ruff
 
 #* 📦 Packaging
 
-# 🛞  Build wheel, compile binary, and sign.
+# 🛞  Build wheel, compile binary, and sign...
 [group('📦 Packaging')]
 pkg-build *args:
   {{pre}} {{_uvr}} {{name}} {{args}}
@@ -248,7 +248,7 @@ con-norm-line-endings:
   {{pre}} try { {{_uvr}} pre-commit run mixed-line-ending --all-files | Out-Null } \
   catch [System.Management.Automation.NativeCommandExitException] {}
 
-# 👥 Run dev task.
+# 👥 Run dev task...
 [group('👥 Contributor environment setup')]
 con-dev *args:
   {{pre}} {{_dev}} {{args}}

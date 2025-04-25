@@ -10,13 +10,6 @@
       "default": ""
     },
     {
-      "id": "pkg",
-      "type": "pickString",
-      "description": "Packaging recipe to run",
-      "default": "",
-      "options": ["build", "release"]
-    },
-    {
       "id": "python",
       "type": "pickString",
       "description": "Python recipe to run",
@@ -46,7 +39,12 @@
       "id": "setup",
       "type": "pickString",
       "description": "Machine setup recipe to run",
-      "options": ["scripts", "git", "git-recs", "gh"]
+      "options": [
+        // "git", //? Requires extra args
+        "git-recs  # 👤 Configure Git as recommended.",
+        "gh  # 🔑 Log in to GitHub API.",
+        "scripts  # 🔓 Allow running local PowerShell scripts."
+      ]
     },
     {
       "id": "name",
@@ -61,90 +59,58 @@
   ],
   "tasks": [
     {
-      "label": "Contributor environment setup",
-      "detail": "Set up the contributor environment",
-      "icon": { "color": "terminal.ansiYellow", "id": "star-full" },
+      "label": "👥 Run contributor environment setup",
       "command": "./j.ps1 con",
       "runOptions": { "runOn": "folderOpen" }
     },
     {
-      "label": "Run",
-      "detail": "Run a shell command",
-      "icon": { "color": "terminal.ansiCyan", "id": "run" },
+      "label": "🏃 Run shell commands with UV synced...",
       "command": "./j.ps1 run ${input:args}"
     },
     {
-      "label": "uv",
-      "detail": "Run uv",
-      "icon": { "color": "terminal.ansiMagenta", "id": "star-full" },
+      "label": "🟣 uv ...",
       "command": "./j.ps1 uv ${input:args}"
     },
     {
-      "label": "uv run",
-      "detail": "Run something with uv",
-      "icon": { "color": "terminal.ansiMagenta", "id": "run" },
+      "label": "🏃 uv run ...",
       "command": "./j.ps1 uv-run ${input:args}"
     },
     {
-      "label": "uv sync (with args)",
-      "detail": "Sync the contributor environment",
-      "icon": { "color": "terminal.ansiMagenta", "id": "sync" },
+      "label": "♻️ uv sync ...",
       "command": "./j.ps1 uv-sync ${input:args}"
     },
     {
-      "label": "Python",
-      "detail": "Run a Python recipe",
-      "icon": { "color": "terminal.ansiYellow", "id": "snake" },
+      "label": "🐍 Run a Python recipe...",
       "command": "./j.ps1 py-${input:python} ${input:args}"
     },
     {
-      "label": "Packaging",
-      "detail": "Run a Packaging recipe",
-      "icon": { "color": "terminal.ansiRed", "id": "package" },
-      "command": "./j.ps1 pkg-${input:pkg} ${input:args}"
+      "label": "📦 Run a Packaging recipe...",
+      "command": "./j.ps1 pkg-${input:packaging} ${input:args}"
     },
     {
-      "label": "Build",
-      "detail": "Run the default build recipe",
-      "icon": { "color": "terminal.ansiRed", "id": "package" },
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
+      "label": "🛞 Build wheel, compile binary, and sign.",
+      "group": { "kind": "build", "isDefault": true },
       "command": "./j.ps1 pkg-build"
     },
     {
-      "label": "Test",
-      "detail": "Run the default test recipe",
+      "label": "🧪 pytest",
       "command": "./j.ps1 tool-pytest",
-      "group": {
-        "kind": "test",
-        "isDefault": true
-      },
-      "icon": { "color": "terminal.ansiGreen", "id": "beaker" }
+      "group": { "kind": "test", "isDefault": true }
     },
     {
-      "label": "Tool",
-      "detail": "Run a tool recipe",
-      "command": "./j.ps1 tool-${input:tool}",
-      "icon": { "id": "gear" }
+      "label": "⚙️ Run a tool recipe...",
+      "command": "./j.ps1 tool-${input:tool} ${input:args}"
     },
     {
-      "label": "Pre-commit (all-files)",
-      "detail": "Run pre-commit on all files",
-      "command": "./j.ps1 tool-pre-commit --all-files",
-      "icon": { "id": "gear" }
+      "label": "🔵 pre-commit --all-files",
+      "command": "./j.ps1 tool-pre-commit --all-files"
     },
     {
-      "label": "Machine setup",
-      "detail": "Run machine setup recipes",
-      "icon": { "id": "device-desktop" },
-      "command": "./j.ps1 setup-${input:setup} ${input:args}"
+      "label": "💻 Run a machine setup recipe...",
+      "command": "./j.ps1 setup-${input:setup}"
     },
     {
-      "label": "Machine setup: Git",
-      "detail": "Set up Git",
-      "icon": { "id": "device-desktop" },
+      "label": "👤 Set Git username and email...",
       "command": "./j.ps1 setup-git ${input:name} ${input:email}"
     }
   ]
