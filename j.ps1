@@ -11,7 +11,8 @@ $Env:DEV_VERBOSE = $Verbose ? 'true' : $null
 $Env:JUST_VERBOSE = $Verbose ? '1' : $null
 #? Set environment variables and uv version
 Sync-DevEnv
-Sync-Uv
+if ($Env:CI) { $Uvx = 'uvx' }
+else { Sync-Uv; $Uvx = './uvx' }
 #? Pass arguments to Just
-if ($RemainingArgs) { ./uvx --from "rust-just@$Env:JUST_VERSION" just @RemainingArgs }
-else { ./uvx --from "rust-just@$Env:JUST_VERSION" just list }
+if ($RemainingArgs) { & $Uvx --from "rust-just@$Env:JUST_VERSION" just @RemainingArgs }
+else { & $Uvx --from "rust-just@$Env:JUST_VERSION" just list }
