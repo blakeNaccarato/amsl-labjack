@@ -6,7 +6,6 @@ ci:
   skip:
     - "fawltydeps-dev"
     - "fawltydeps-amsl-labjack"
-    - "fawltydeps-hello"
     - "pytest"
   autoupdate_schedule: "quarterly"
 repos:
@@ -29,15 +28,6 @@ repos:
         files: |
           (?x)^(
             packages/amsl-labjack/.*
-          )$
-      - id: "fawltydeps-hello"
-        name: "fawltydeps-hello"
-        pass_filenames: false
-        language: "system"
-        entry: "pwsh -NonInteractive -NoProfile -Command './j.ps1 fawltydeps --config-file packages/hello/pyproject.toml'"
-        files: |
-          (?x)^(
-            packages/hello/.*
           )$
       - id: "pytest"
         name: "pytest"
