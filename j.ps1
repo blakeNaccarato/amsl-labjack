@@ -9,8 +9,9 @@ Param([Parameter(ValueFromRemainingArguments)][string[]]$RemainingArgs)
 $Verbose = $Env:CI -or ($DebugPreference -ne 'SilentlyContinue') -or ($VerbosePreference -ne 'SilentlyContinue')
 $Env:DEV_VERBOSE = $Verbose ? 'true' : $null
 $Env:JUST_VERBOSE = $Verbose ? '1' : $null
-#? Set environment variables
-Sync-FooEnv
+#? Set environment variables and uv version
+Sync-DevEnv
+Sync-Uv
 #? Pass arguments to Just
-if ($RemainingArgs) { uvx --from "rust-just@$Env:JUST_VERSION" just @RemainingArgs }
-else { uvx --from "rust-just@$Env:JUST_VERSION" just list }
+if ($RemainingArgs) { ./uvx --from "rust-just@$Env:JUST_VERSION" just @RemainingArgs }
+else { ./uvx --from "rust-just@$Env:JUST_VERSION" just list }

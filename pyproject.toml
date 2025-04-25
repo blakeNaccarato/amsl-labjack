@@ -17,6 +17,8 @@ dev = [
   "sourcery>=1.32.0",
 ]
 
+[tool.uv]
+required-version = "==0.6.16"
 [tool.uv.sources]
 amsl-labjack-dev = { workspace = true }
 amsl-labjack = { workspace = true }

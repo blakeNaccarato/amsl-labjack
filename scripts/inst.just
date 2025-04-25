@@ -151,25 +151,27 @@ _wt_name :=\
 wt:
   @{{quote(GREEN+_wt_name+sp+_na+NORMAL)}}
 
-# 🌐 Run `.venv/[Scripts/bin]/just inst uv` if you've got a `.venv` but no `uv`.
+# 🌐 Install a project version of uv if you've got global uv
 [group('🌐 Install')]
 uv:
   @{{ if uv_found==true { _uv_found_msg } else { empty } }}
   {{ if uv_found==false { inst_uv } else { empty } }}
+inst_uv :=\
+  if os_family()=='windows' { inst_uv_win } else { empty } \
+  || inst_uv_unix
 uv_found :=\
   if uv_bin!=null { true } else { false }
-inst_uv :=\
-  if uv_bin!=null { quote(GREEN+'uv'+sp+_installed+NORMAL) } else { empty } \
-  || if os_family()=='windows' { inst_uv_win } else { empty } \
-  || inst_uv_unix
 uv_bin :=\
-  which('uv' + bin_ext) || null
+  if path_exists('./uv' + bin_ext)==true { './uv' + bin_ext } else { empty } \
+  || null
+_uv_bin :=\
+  './uv' + bin_ext
 inst_uv_win :=\
   pre + sp + 'Invoke-RestMethod' + sp + _inst_uv_script + sp + '| Invoke-Expression'
 inst_uv_unix :=\
   pre + sp + "curl --proto '=https' --tlsv1.2 -LsSf" + sp + _inst_uv_script
 _inst_uv_script :=\
-  quote('https://astral.sh/uv/' + trim(read('.uv-version')) + '/install' + sh_ext)
+  quote('https://astral.sh/uv/' + uv_version + '/install' + sh_ext)
 _uv_found_msg :=\
   quote(GREEN+_uv_name+sp+_installed+NORMAL)
 _uv_name :=\

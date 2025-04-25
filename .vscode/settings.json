@@ -263,6 +263,8 @@
     "AMSL_LABJACK_VERSION": "0.0.0",
     "COVERAGE_CORE": "sysmon",
     "DEV_ENV_SET": "1",
+    "FORCE_COLOR": "1",
+    "INSTALLER_NO_MODIFY_PATH": "1",
     "JUPYTER_PLATFORM_DIRS": "1",
     "JUST_COMMAND_COLOR": "purple",
     "JUST_EXPLAIN": "true",
@@ -277,13 +279,15 @@
     "PYTHONUTF8": "1",
     "PYTHONWARNDEFAULTENCODING": "1",
     "PYTHONWARNINGS": "ignore",
-    "UV_PREVIEW": "1",
+    "UV_INSTALL_DIR": ".",
     "UV_VERSION": "0.6.16"
   },
   "terminal.integrated.env.osx": {
     "AMSL_LABJACK_VERSION": "0.0.0",
     "COVERAGE_CORE": "sysmon",
     "DEV_ENV_SET": "1",
+    "FORCE_COLOR": "1",
+    "INSTALLER_NO_MODIFY_PATH": "1",
     "JUPYTER_PLATFORM_DIRS": "1",
     "JUST_COMMAND_COLOR": "purple",
     "JUST_EXPLAIN": "true",
@@ -298,13 +302,15 @@
     "PYTHONUTF8": "1",
     "PYTHONWARNDEFAULTENCODING": "1",
     "PYTHONWARNINGS": "ignore",
-    "UV_PREVIEW": "1",
+    "UV_INSTALL_DIR": ".",
     "UV_VERSION": "0.6.16"
   },
   "terminal.integrated.env.windows": {
     "AMSL_LABJACK_VERSION": "0.0.0",
     "COVERAGE_CORE": "sysmon",
     "DEV_ENV_SET": "1",
+    "FORCE_COLOR": "1",
+    "INSTALLER_NO_MODIFY_PATH": "1",
     "JUPYTER_PLATFORM_DIRS": "1",
     "JUST_COMMAND_COLOR": "purple",
     "JUST_EXPLAIN": "true",
@@ -319,7 +325,7 @@
     "PYTHONUTF8": "1",
     "PYTHONWARNDEFAULTENCODING": "1",
     "PYTHONWARNINGS": "ignore",
-    "UV_PREVIEW": "1",
+    "UV_INSTALL_DIR": ".",
     "UV_VERSION": "0.6.16"
   },
   //! Other

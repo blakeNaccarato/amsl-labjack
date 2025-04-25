@@ -1,3 +1,13 @@
+# uv binaries in root of the repo
+/uv
+/uv.previous
+/uv.exe
+/uv.exe.previous.exe
+/uvx
+/uv.previous
+/uvx.exe
+/uv.exe.previous.exe
+
 # Dummy files for testing recipes
 .dummy*
 
@@ -6,9 +16,6 @@ source.zip
 pyapp/*
 !pyapp/Cargo.lock
 !pyapp/.cargo
-
-# Build artifacts
-*.exe
 
 # Coverage
 .coverage

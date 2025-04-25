@@ -1,10 +1,6 @@
 #* Project
 name :=\
   'amsl-labjack'
-python_version :=\
-  env('PYTHON_VERSION', empty)
-uv_version :=\
-  env('UV_VERSION', empty)
 
 #* Settings
 set dotenv-load
@@ -41,13 +37,13 @@ list:
 
 # 🏃 Run shell command with UV synced.
 [group('⛰️ Environments')]
-run *args="Write-Host 'No command given' -ForeGroundColor Yellow": uv-update uv-sync
+run *args="Write-Host 'No command given' -ForeGroundColor Yellow": uv-sync
   {{ pre + sp + args }}
 alias r := run
 
 # 👥 Run recipe as a contributor.
 [group('⛰️ Environments')]
-con *args: uv-update con-pre-commit-hooks uv-sync
+con *args: con-pre-commit-hooks uv-sync
   {{pre}} Sync-ContribEnv
   {{ if args==empty { empty } else { pre + _just + sp + args } }}
 alias c := con
@@ -83,8 +79,6 @@ _uv_options :=\
   + sp + '--python' + ( \
     if python_version==empty { empty } else { sp + quote(python_version) } \
   )
-_uv :=\
-  'uv'
 _uvr :=\
   _uv + sp + 'run' + sp + _uv_options
 _uvs :=\
@@ -100,11 +94,6 @@ uv *args:
 uv-run *args:
   {{pre}} {{_uvr}} {{args}}
 alias uvr := uv-run
-
-# 🌐 Synchronize installed uv version with project uv version.
-[group('🟣 uv')]
-uv-update:
-  uv self update{{ if uv_version==empty { empty } else { sp + quote(uv_version) } }}
 
 # ♻️ uv sync ...
 [group('🟣 uv')]
@@ -236,7 +225,7 @@ con-pre-commit-hooks:
     ) -Contains $False \
   ) { \
     {{_uvr}} pre-commit install --install-hooks | Out-Null \
-    {{pre}} {{ quote(GREEN + 'Pre-commit hooks installed.' + NORMAL) }} \
+    {{ quote(GREEN + 'Pre-commit hooks installed.' + NORMAL) }} \
   }
 hooks :=\
   'pre-commit'
