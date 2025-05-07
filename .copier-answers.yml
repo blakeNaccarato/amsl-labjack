@@ -1,5 +1,5 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: 2024.2.0-26-g4c05598
+_commit: 2024.2.0-28-ge73339b
 _src_path: gh:softboiler/copier-pipeline
 actions_runner: ubuntu-24.04
 github_repo_name: amsl-labjack
