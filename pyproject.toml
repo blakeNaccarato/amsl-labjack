@@ -14,7 +14,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3.12",
 ]
-dependencies = ["dwfpy>=1.2.0"]
+dependencies = ["dwfpy>=1.2.0", "pyqtgraph>=0.13.7", "pyside6>=6.9.0"]
 [project.urls]
 Changes = "https://blakeNaccarato.github.io/amsl-labjack/changelog.html"
 Docs = "https://blakeNaccarato.github.io/amsl-labjack"
