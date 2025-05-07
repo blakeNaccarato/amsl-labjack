@@ -109,9 +109,7 @@ jobs:
           - "macos-15"
           - "ubuntu-24.04"
           - "windows-2025"
-        python:
-          - "3.11"
-          - "3.12"
+        python: ["3.12"]
     runs-on: "${{ matrix.runner }}"
     steps:
       - uses: "actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332" # v4.1.7
