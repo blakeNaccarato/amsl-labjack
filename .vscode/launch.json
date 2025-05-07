@@ -37,6 +37,14 @@
       "program": "${file}"
     },
     {
+      "name": "Python: Build docs",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "sphinx",
+      "args": ["-T", "docs", "_site"],
+      "console": "internalConsole"
+    },
+    {
       "name": "Python: Current file with 1 arg",
       "type": "debugpy",
       "request": "launch",
@@ -65,21 +73,6 @@
       "type": "PowerShell",
       "request": "launch",
       "script": "${file}"
-    },
-    {
-      //? https://github.com/microsoft/vscode-python-debugger/issues/335
-      "name": "pytest",
-      //! Uncomment below to disable "justMyCode" when debugging. Comment out after.
-      // "purpose": ["debug-test"],
-      //!
-      "presentation": {
-        "hidden": true
-      },
-      "type": "debugpy",
-      "request": "launch",
-      "program": "${file}",
-      "console": "internalConsole",
-      "justMyCode": false
     }
   ]
 }

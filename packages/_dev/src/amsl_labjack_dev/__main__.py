@@ -1,7 +1,5 @@
 """Command-line interface."""
 
-from dataclasses import dataclass
-
 from cappa.base import command, invoke
 from cappa.subcommand import Subcommands
 
@@ -26,8 +24,8 @@ class ElevatePyrightWarnings:
     """Elevate Pyright warnings to errors."""
 
 
-@dataclass
-class AmslLabjackDev:
+@command()
+class Dev:
     """Dev tools."""
 
     commands: Subcommands[
@@ -37,7 +35,7 @@ class AmslLabjackDev:
 
 def main():
     """CLI entry-point."""
-    invoke(AmslLabjackDev)
+    invoke(Dev)
 
 
 if __name__ == "__main__":

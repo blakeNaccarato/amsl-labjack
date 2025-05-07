@@ -1,7 +1,7 @@
 {
   "version": "2.0.0",
   "type": "shell",
-  "problemMatcher": ["$python"],
+  "problemMatcher": [],
   "inputs": [
     {
       "id": "args",
@@ -40,7 +40,7 @@
       "type": "pickString",
       "description": "Machine setup recipe to run",
       "options": [
-        // "git", //? Requires extra args
+        // "git", // ? Requires extra args
         "git-recs  # 👤 Configure Git as recommended.",
         "gh  # 🔑 Log in to GitHub API.",
         "scripts  # 🔓 Allow running local PowerShell scripts."
@@ -55,6 +55,33 @@
       "id": "email",
       "type": "promptString",
       "description": "Git setup: Enter the email address associated with your GitHub account"
+    },
+    {
+      "id": "templateOptions",
+      "type": "pickString",
+      "description": "Template options.",
+      "options": ["", "-Prompt", "-Stay", "-Stay -Prompt", "-Recopy -Prompt"]
+    },
+    {
+      "id": "ref",
+      "type": "promptString",
+      "description": "Commit SHA or other VCS reference."
+    },
+    {
+      "id": "dependency",
+      "type": "promptString",
+      "description": "Show tree of packages requesting this dependency."
+    },
+    {
+      "id": "version",
+      "type": "promptString",
+      "description": "Version number."
+    },
+    {
+      "id": "changeType",
+      "type": "pickString",
+      "description": "Change type.",
+      "options": ["breaking", "deprecation", "change"]
     }
   ],
   "tasks": [
@@ -110,8 +137,81 @@
       "command": "./j.ps1 setup-${input:setup}"
     },
     {
+      "label": "♻️ Sync with template",
+      "command": "./j.ps1 template-sync"
+    },
+    {
       "label": "👤 Set Git username and email...",
       "command": "./j.ps1 setup-git ${input:name} ${input:email}"
+    },
+    {
+      "label": "👥 Update changelog",
+      "type": "shell",
+      "command": "./j.ps1 con-update-changelog ${input:changeType}"
+    },
+    {
+      "label": "👥 Update changelog with the latest commit's message",
+      "type": "shell",
+      "command": "./j.ps1 con-update-changelog-latest-commit"
+    },
+
+    // TODO ------------------------------------------------------------------------- //
+
+    {
+      "label": "setup: Remove *.rej",
+      "type": "shell",
+      "command": "Get-ChildItem -Recurse -Filter *.rej | Remove-Item",
+      "icon": { "id": "file-symlink-directory" },
+      "problemMatcher": []
+    },
+    {
+      "label": "task: Rebase back to fork",
+      "type": "shell",
+      "command": "git rebase -i --fork-point main",
+      "icon": { "id": "git-branch" },
+      "problemMatcher": []
+    },
+    {
+      "label": "task: Show tree of packages requesting a dependency",
+      "type": "shell",
+      "command": "./Invoke-Uv.ps1 pipdeptree --reverse --packages ${input:dependency}",
+      "icon": { "id": "versions" },
+      "problemMatcher": []
+    },
+    {
+      "label": "task: Build docs",
+      "type": "shell",
+      "command": "./j.ps1 con-dev build-docs",
+      "icon": { "id": "book" },
+      "problemMatcher": []
+    },
+    {
+      "label": "task: Profile this file",
+      "type": "shell",
+      "command": "./Invoke-Uv.ps1 cProfile -o .prof ${file}",
+      "icon": { "id": "graph-line" },
+      "problemMatcher": []
+    },
+    {
+      "label": "task: View profile results with snakeviz",
+      "type": "shell",
+      "command": "./Invoke-Uv.ps1 snakeviz .prof",
+      "icon": { "id": "graph-line" },
+      "problemMatcher": []
+    },
+    {
+      "label": "task: Bump version",
+      "type": "shell",
+      "command": ". ./dev.ps1 && uvx copier@9.7.1 update --vcs-ref=HEAD --defaults --data project_version='${input:version}' && iuv towncrier build --yes --version '${input:version}' && git add . && git commit -m '${input:version}'",
+      "icon": { "id": "tag" },
+      "problemMatcher": []
+    },
+    {
+      "label": "task: Release version",
+      "type": "shell",
+      "command": ". ./dev.ps1 && Invoke-Uv && ($Version = (Get-Content '.copier-answers.yml' | Find-Pattern '^project_version:\\s(.+)$')) && git tag --sign -m $Version $Version && git push",
+      "icon": { "id": "tag" },
+      "problemMatcher": []
     }
   ]
 }

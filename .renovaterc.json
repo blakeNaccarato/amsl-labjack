@@ -1,0 +1,120 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Establish base config, schedule, and manager defaults",
+  "addLabels": ["dependencies"],
+  "extends": [
+    ":dependencyDashboard",
+    ":semanticPrefixFixDepsChoreOthers",
+    ":ignoreModulesAndTests",
+    "replacements:all",
+    "workarounds:all"
+  ],
+  "dependencyDashboardApproval": true,
+  "lockFileMaintenance": { "enabled": true },
+  "separateMajorMinor": false,
+  "git-submodules": { "enabled": true },
+  "pre-commit": { "enabled": true },
+  "enabledManagers": [
+    "custom.regex",
+    "devcontainer",
+    "git-submodules",
+    "github-actions",
+    "pep621",
+    "pre-commit"
+  ],
+  "pep621": { "rangeStrategy": "bump" },
+  "customManagers": [
+    {
+      "description": "copier",
+      "customType": "regex",
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "copier",
+      "managerFilePatterns": [
+        "^env\\.json$",
+        "^\\.github/workflows/env\\.yml$",
+        "^\\.vscode/settings\\.json$"
+      ],
+      "matchStrings": [
+        "^\\s+\"COPIER_VERSION\": \"(?<currentValue>[^\"]+)\",?$",
+        "^\\s+copier_version: { value: \"(?<currentValue>[^\"]+)\" }$"
+      ]
+    },
+    {
+      "description": "just",
+      "customType": "regex",
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "rust-just",
+      "managerFilePatterns": [
+        "^env\\.json$",
+        "^\\.github/workflows/env\\.yml$",
+        "^\\.vscode/settings\\.json$"
+      ],
+      "matchStrings": [
+        "^\\s+\"JUST_VERSION\": \"(?<currentValue>[^\"]+)\",?$",
+        "^\\s+just_version: { value: \"(?<currentValue>[^\"]+)\" }$"
+      ]
+    },
+    {
+      "description": "pylance",
+      "customType": "regex",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "microsoft/pylance-release",
+      "managerFilePatterns": [
+        "^env\\.json$",
+        "^\\.github/workflows/env\\.yml$",
+        "^\\.vscode/settings\\.json$"
+      ],
+      "matchStrings": [
+        "^\\s+\"PYRIGHT_PYTHON_PYLANCE_VERSION\": \"(?<currentValue>[^\"]+)\",?$",
+        "^\\s+pyright_python_pylance_version: { value: \"(?<currentValue>[^\"]+)\" }$"
+      ]
+    },
+    {
+      "description": "python",
+      "customType": "regex",
+      "datasourceTemplate": "python-version",
+      "depNameTemplate": "python",
+      "managerFilePatterns": [
+        "^env\\.json$",
+        "^\\.github/workflows/env\\.yml$",
+        "^\\.vscode/settings\\.json$"
+      ],
+      "matchStrings": [
+        "^\\s+\"PYTHON_VERSION\": \"(?<currentValue>[^\"]+)\",?$",
+        "^\\s+python_version: { value: \"(?<currentValue>[^\"]+)\" }$"
+      ]
+    },
+    {
+      "description": "uv",
+      "customType": "regex",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "astral-sh/uv",
+      "managerFilePatterns": [
+        "^env\\.json$",
+        "^\\.github/workflows/env\\.yml$",
+        "^\\.vscode/settings\\.json$"
+      ],
+      "matchStrings": [
+        "^\\s+\"UV_VERSION\": \"(?<currentValue>[^\"]+)\",?$",
+        "^\\s+uv_version: { value: \"(?<currentValue>[^\"]+)\" }$"
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "groupName": "all dependencies",
+      "groupSlug": "all",
+      "matchPackageNames": ["*"]
+    },
+    {
+      "description": "Update regex pins separately",
+      "groupName": "regex",
+      "matchManagers": ["custom.regex"]
+    },
+    {
+      "description": "Update `.devcontainer` updates separately for manual testing",
+      "groupName": "devcontainer",
+      "matchManagers": ["devcontainer"]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "files": ["CONTRIBUTORS.md", "README.md"],
+  "projectName": "amsl-labjack",
+  "projectOwner": "blakeNaccarato"
+}

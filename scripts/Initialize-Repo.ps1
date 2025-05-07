@@ -11,7 +11,7 @@ git add .
 try { git commit --no-verify -m 'Prepare template using blakeNaccarato/copier-python' }
 catch [System.Management.Automation.NativeCommandExitException] {}
 
-git submodule add --force --name 'typings' 'https://github.com/microsoft/python-type-stubs.git' 'typings'
+git submodule add --force --name 'typings' 'https://github.com/softboiler/python-type-stubs.git' 'typings'
 git add .
 try { git commit --no-verify -m 'Add template and type stub submodules' }
 catch [System.Management.Automation.NativeCommandExitException] {}
@@ -32,7 +32,7 @@ if ($Fresh) {
         Get-Content '.copier-answers.yml' |
             Find-Pattern '^project_description:\s(.+)$'
     )
-    gh repo edit --homepage 'https://blakeNaccarato.github.io/blakeNaccarato/amsl-labjack/'
+    gh repo edit --homepage 'https://blakeNaccarato.github.io/amsl-labjack/'
 }
 
 git push --set-upstream origin main

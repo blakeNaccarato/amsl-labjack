@@ -8,8 +8,12 @@ function Sync-Uv {
     <#.SYNOPSIS
     Sync uv version.#>
     if (Get-Command './uv' -ErrorAction 'Ignore') {
-        (./uv --version) -Match "uv ([\d.]+)" | Out-Null
-        if ($Matches[1] -ne $Env:UV_VERSION) { ./uv self update $Env:UV_VERSION }
+        (./uv self version) -Match "uv ([\d.]+)" | Out-Null
+        $OrigForceColor = $Env:FORCE_COLOR
+        $Env:FORCE_COLOR = $null
+        (./uv self version) -Match 'uv (\d)'
+        $Env:FORCE_COLOR = $OrigForceColor
+        if ($Matches[1] -eq $Env:UV_VERSION) { return }
     }
     elseif (Get-Command 'uvx' -ErrorAction 'Ignore') { uvx --from "rust-just@$Env:JUST_VERSION" just inst uv }
     elseif ($IsWindows) { powershell -ExecutionPolicy 'ByPass' -Command "Invoke-RestMethod https://astral.sh/uv/$Env:UV_VERSION/install.ps1 | Invoke-Expression" }
@@ -61,13 +65,13 @@ function Sync-ContribEnv {
 function Sync-CiEnv {
     <#.SYNOPSIS
     Sync CI environment path and environment variables.#>
-    #? Add `.venv` tools to CI path. Needed for some GitHub Actions like pyright
+    # ? Add `.venv` tools to CI path. Needed for some GitHub Actions like pyright
     $GitHubPath = $Env:GITHUB_PATH ? $Env:GITHUB_PATH : '.dummy-ci-path-file'
     if (!(Test-Path $GitHubPath)) { New-Item $GitHubPath }
     if ( !(Get-Content $GitHubPath | Select-String -Pattern '.venv') ) {
         Add-Content $GitHubPath ('.venv/bin', '.venv/scripts')
     }
-    #? Write environment variables to CI environment file
+    # ? Write environment variables to CI environment file
     $EnvFile = $Env:GITHUB_ENV ? $Env:GITHUB_ENV : '.dummy-ci-env-file'
     if (!(Test-Path $EnvFile)) { New-Item $EnvFile }
     if (!(Get-Content $EnvFile | Select-String -Pattern 'DEV_ENV_SET')) {

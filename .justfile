@@ -1,35 +1,41 @@
-#* Project
+# * Project
 name :=\
-  'amsl-labjack'
+  env('PROJECT_NAME', empty)
+project_owner_github_username :=\
+  env('PROJECT_OWNER_GITHUB_USERNAME', empty)
+github_repo_name :=\
+  env('GITHUB_REPO_NAME', empty)
+copier_version :=\
+  env('COPIER_VERSION', empty)
 
-#* Settings
+# * Settings
 set dotenv-load
 set unstable
 
-#* Imports
+# * Imports
 import 'scripts/common.just'
 
-#* Modules
-#? 🌐 Install
+# * Modules
+# ? 🌐 Install
 mod inst 'scripts/inst.just'
 
-#* Shells
+# * Shells
 set shell :=\
   ['pwsh', '-NonInteractive', '-NoProfile', '-CommandWithArgs']
 set script-interpreter :=\
   ['pwsh', '-NonInteractive', '-NoProfile']
 
-#* Reusable shell preambles
+# * Reusable shell preambles
 pre :=\
   pwsh_pre + ';'
 script_pre :=\
   pwsh_pre
 
-#* Python dev package
+# * Python dev package
 _dev :=\
   _uvr + sp + quote(name + '-dev')
 
-#* ♾️  Self
+# * ♾️  Self
 
 # 📃 [DEFAULT] List recipes.
 [group('♾️  Self')]
@@ -43,7 +49,7 @@ just *args:
   {{pre}} {{_just}} {{args}}
 alias j := just
 
-#* ⛰️ Environments
+# * ⛰️ Environments
 
 # 🏃 Run shell commands with UV synced...
 [group('⛰️ Environments')]
@@ -70,25 +76,25 @@ ci *args: uv-sync
 # 📦 Run recipes in a devcontainer.
 [script, group('⛰️ Environments')]
 @devcontainer *args:
-  {{'#?'+BLUE+sp+'Source common shell config'+NORMAL}}
+  {{'# ?'+BLUE+sp+'Source common shell config'+NORMAL}}
   {{script_pre}}
-  {{'#?'+BLUE+sp+'Devcontainers need submodules explicitly marked as safe directories'+NORMAL}}
+  {{'# ?'+BLUE+sp+'Devcontainers need submodules explicitly marked as safe directories'+NORMAL}}
   $Repo = Get-ChildItem '/workspaces'
   $Packages = Get-ChildItem "$Repo/packages"
   $SafeDirs = @($Repo) + $Packages
   foreach ($Dir in $SafeDirs) {
     if (!($SafeDirs -contains $Dir)) { git config --global --add safe.directory $Dir }
   }
-  {{ if args==empty { 'return' } else { '#?'+BLUE+sp+'Run recipe'+NORMAL } }}
+  {{ if args==empty { 'return' } else { '# ?'+BLUE+sp+'Run recipe'+NORMAL } }}
   {{ if args==empty {empty} else { _just + sp + args } }}
 alias dc := devcontainer
 
 _no_recipe_given :=\
   quote(BLACK+'No recipe given'+NORMAL)
 
-#* 🟣 uv
+# * 🟣 uv
 
-#? Uv invocations
+# ? Uv invocations
 _uv_options :=\
   '--all-packages' \
   + sp + '--python' + ( \
@@ -110,6 +116,11 @@ uv-run *args:
   {{pre}} {{_uvr}} {{args}}
 alias uvr := uv-run
 
+# 🏃 uvx ...
+[group('🟣 uv')]
+uvx *args:
+  {{pre}} {{_uv}} {{args}}
+
 # ♻️  uv sync ...
 [group('🟣 uv')]
 uv-sync *args:
@@ -117,7 +128,7 @@ uv-sync *args:
 alias uvs := uv-sync
 alias sync := uv-sync
 
-#* 🐍 Python
+# * 🐍 Python
 
 # 🐍 python ...
 [group('🐍 Python')]
@@ -153,7 +164,7 @@ alias pyg := py-gui
 py-gui:
   @{{quote(GREEN+'GUI scripts'+sp+_na+NORMAL)}}
 
-#* ⚙️ Tools
+# * ⚙️ Tools
 
 # 🧪 pytest ...
 [group('⚙️  Tools')]
@@ -161,16 +172,16 @@ tool-pytest *args:
   {{pre}} {{_uvr}} pytest {{args}}
 alias pytest := tool-pytest
 
-# 📖 docs
+# 📖 preview docs
 [group('⚙️  Tools')]
 tool-docs-preview:
   {{pre}} {{_uvr}} sphinx-autobuild --show-traceback docs _site \
     {{ prepend( '--ignore', "'**/temp' '**/data' '**/apidocs' '**/*schema.json'" ) }}
 
-# 📖 docs
+# 📖 build docs
 [group('⚙️  Tools')]
 tool-docs-build:
-  {{pre}} {{_uvr}} sphinx-build 'docs' '_site'
+  {{pre}} {{_uvr}} sphinx-build -EaT 'docs' '_site'
 
 # 🔵 pre-commit run ...
 [group('⚙️  Tools')]
@@ -204,7 +215,7 @@ tool-ruff *args:
   {{pre}} {{_uvr}} ruff check {{args}} .
 alias ruff := tool-ruff
 
-#* 📦 Packaging
+# * 📦 Packaging
 
 # 🛞  Build wheel, compile binary, and sign...
 [group('📦 Packaging')]
@@ -218,7 +229,15 @@ pkg-release version:
   {{pre}} git tag --sign -m {{quote(version)}} {{quote(version)}} && git push
 alias release := pkg-release
 
-#* 👥 Contributor environment setup
+# * 🧩 Templating
+
+# ♻️  Sync with template
+[group('🧩 Templating')]
+template-sync:
+  {{_uvx}} 'copier@9.7.1' update --vcs-ref=HEAD
+
+
+# * 👥 Contributor environment setup
 
 # 👥 Update Git submodules.
 [group('👥 Contributor environment setup')]
@@ -236,7 +255,7 @@ con-pre-commit-hooks:
       Test-Path \
     ) -Contains $False \
   ) { \
-    {{_uvr}} pre-commit install --install-hooks | Out-Null \
+    {{_uvr}} pre-commit install --install-hooks | Out-Null; \
     {{ quote(GREEN + 'Pre-commit hooks installed.' + NORMAL) }} \
   }
 hooks :=\
@@ -255,7 +274,17 @@ con-dev *args:
 alias dev := con-dev
 alias d := con-dev
 
-#* 💻 Machine setup
+# 👥 Update changelog
+[group('👥 Contributor environment setup')]
+con-update-changelog change_type:
+ {{pre}} {{_dev}} add-change {{change_type}}
+
+# 👥 Update changelog with the latest commit's message
+[group('👥 Contributor environment setup')]
+con-update-changelog-latest-commit:
+ {{pre}} {{_uvr}} towncrier create +$((Get-Date).ToUniversalTime().ToString('o').Replace(':','-')).change.md --content $($(git log -1 --format='%s') + ' ([' + $(git rev-parse --short HEAD) + '](https://github.com/{{project_owner_github_username}}/{{github_repo_name}}/commit/' + $(git rev-parse HEAD) + '))\n')
+
+# * 💻 Machine setup
 
 # 👤 Set Git username and email.
 [group('💻 Machine setup')]

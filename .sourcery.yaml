@@ -1,0 +1,20 @@
+version: "1"
+
+ignore:
+  # The defaults
+  - ".git"
+  - "venv"
+  - ".venv"
+  - "env"
+  - ".env"
+  - ".tox"
+  - "node_modules"
+  - "vendor"
+  # Extras
+  - ".*"
+
+rule_settings:
+  python_version: "3.12"
+  enable: ["default"]
+  disable:
+    - "remove-redundant-pass" # Managed by Ruff

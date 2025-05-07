@@ -1,16 +1,35 @@
 exclude: |
   (?x)^(
-    \.crates2.json
+    \.copier-answers\.yml
+    |changelog/towncrier_template\.md\.jinja
   )$
 ci:
   skip:
+    - "sync"
     - "fawltydeps"
     - "fawltydeps-dev"
-    - "pytest"
+    - "pytest-fast-only"
   autoupdate_schedule: "quarterly"
+default_install_hook_types:
+  - "pre-commit"
+  - "post-checkout" # sync
 repos:
+  - repo: "meta"
+    hooks:
+      # ? Enable this to ensure each hook runs against at least one file
+      # - id: "check-hooks-apply"
+      - id: "check-useless-excludes"
   - repo: "local"
     hooks:
+      - id: "sync"
+        name: "sync"
+        stages:
+          - "pre-commit"
+          - "post-checkout"
+        pass_filenames: false
+        language: "system"
+        entry: |
+          pwsh -Command "./j.ps1 uv-sync"
       - id: "fawltydeps"
         name: "fawltydeps"
         pass_filenames: false
@@ -19,6 +38,7 @@ repos:
         files: |
           (?x)^(
             src/.*
+            |pyproject\.toml
           )$
       - id: "fawltydeps-dev"
         name: "fawltydeps-dev"
@@ -28,13 +48,23 @@ repos:
         files: |
           (?x)^(
             packages/_dev/.*
+            |docs/.*
+            |tests/.*
           )$
-      - id: "pytest"
-        name: "pytest"
-        always_run: true
+      - id: "pytest-fast-only"
+        name: "pytest-fast-only"
         pass_filenames: false
         language: "system"
-        entry: "pwsh -NonInteractive -NoProfile -Command './j.ps1 pytest'"
+        entry: 'pwsh -NonInteractive -NoProfile -Command ''./j.ps1 pytest -m `"not slow`"'''
+        files: |
+          (?x)^(
+            .*/pyproject\.toml
+            |docs/.*
+            |requirements/.*
+            |scripts/.*
+            |src/.*
+            |tests/.*
+          )$
   - repo: "https://github.com/pre-commit/pre-commit-hooks"
     rev: "v5.0.0"
     hooks:
@@ -51,6 +81,22 @@ repos:
     rev: "v0.13.0"
     hooks:
       - id: "markdownlint-cli2"
+  - repo: "https://github.com/srstevenson/nb-clean"
+    rev: "3.3.0"
+    hooks:
+      - id: "nb-clean"
+        args:
+          - "--remove-empty-cells"
+          - "--preserve-notebook-metadata"
+          - "--preserve-cell-metadata"
+          - "tags"
+          - "--"
+        files: |
+          (?x)^(
+            docs/.*
+            |src/.*
+            |tests/.*
+          )$
   - repo: "https://github.com/rbubley/mirrors-prettier"
     rev: "v3.5.1"
     hooks:
