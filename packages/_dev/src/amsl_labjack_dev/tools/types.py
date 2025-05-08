@@ -1,6 +1,6 @@
 """Types."""
 
-from typing import Literal
+from typing import Literal, TypeAlias
 
-type ChangeType = Literal["breaking", "deprecation", "change"]
+ChangeType: TypeAlias = Literal["breaking", "deprecation", "change"]
 """Type of change to add to changelog."""

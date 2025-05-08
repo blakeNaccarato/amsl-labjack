@@ -9,10 +9,11 @@ authors = [{ name = "Blake Naccarato", email = "blake.naccarato@gmail.com" }]
 description = "LabJack utilities for AMSL lab"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 classifiers = [
   "License :: OSI Approved :: MIT License",
   # ? Also in CI (https://github.com/actions/python-versions/releases)
+  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   # "Programming Language :: Python :: 3.13",  # ? (via myst-nb) https://github.com/crate-py/rpds/issues/72
   # "Programming Language :: Python :: 3.14",  # ? Not yet beta (https://peps.python.org/pep-0745)
@@ -25,6 +26,10 @@ Home = "https://github.com/blakeNaccarato/amsl-labjack"
 Tracker = "https://github.com/blakeNaccarato/amsl-labjack/issues"
 [dependency-groups]
 dev = [
+  # ? Packages
+  "boilercore",
+  "cachier",
+  "context-models",
   # ? Dev
   "debugpy>=1.8.2",
   "fawltydeps>=0.18.0",
@@ -71,12 +76,15 @@ constraint-dependencies = [
   "urllib3>=2.2.2",
 ]
 [tool.uv.pip]
-python-version = "3.12"
+python-version = "3.11"
 [tool.uv.sources]
 amsl-labjack-dev = { workspace = true }
 amsl-labjack-pipeline = { workspace = true }
+boilercore = { path = "packages/boilercore", editable = true }
+cachier = { path = "packages/cachier", editable = true }
+context-models = { path = "packages/context-models", editable = true }
 [tool.uv.workspace]
-members = ["packages/*"]
+members = ["packages/_dev", "packages/_pipeline"]
 
 [tool.coverage.report]
 exclude_also = ['if __name__ == "__main__":']

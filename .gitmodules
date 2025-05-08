@@ -1,3 +1,12 @@
 [submodule "typings"]
 	path = typings
 	url = https://github.com/softboiler/python-type-stubs.git
+[submodule "context-models"]
+	path = packages/context-models
+	url = https://github.com/softboiler/context_models.git
+[submodule "boilercore"]
+	path = packages/boilercore
+	url = https://github.com/softboiler/boilercore.git
+[submodule "cachier"]
+	path = packages/cachier
+	url = https://github.com/blakeNaccarato/cachier.git

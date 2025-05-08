@@ -7,7 +7,7 @@ name = "amsl-labjack-dev"
 version = "0.0.0"
 requires-python = ">=3.11"
 dependencies = [
-  "cappa>=0.26.4",
+  "cappa>=0.22.4",
   "cyclopts>=3.14.2",
   "dulwich>=0.22.1",
   "pydantic-settings>=2.5.2",

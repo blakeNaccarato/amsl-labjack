@@ -1,6 +1,6 @@
 """Types."""
 
-from typing import NamedTuple
+from typing import NamedTuple, TypeAlias
 
 # * MARK: intersphinx
 
@@ -13,13 +13,13 @@ class IspxMappingValue(NamedTuple):
 
 
 # * MARK: docstrings
-type SeeAlsoReference = tuple[str, None]
+SeeAlsoReference: TypeAlias = tuple[str, None]
 """In all examples given, there is a "None" here, like (numpy.dot, None)."""
-type SeeAlsoRelationship = list[str]
+SeeAlsoRelationship: TypeAlias = list[str]
 """The (optional) relationship is empty if not provided, else one str per line."""
-type SingleSeeAlso = tuple[list[SeeAlsoReference], SeeAlsoRelationship]
+SingleSeeAlso: TypeAlias = tuple[list[SeeAlsoReference], SeeAlsoRelationship]
 """One "entry" in the See Also section."""
-type SeeAlsoSection = list[SingleSeeAlso]
+SeeAlsoSection: TypeAlias = list[SingleSeeAlso]
 """The full "See Also" section, as returned by `numpydoc.docscrape.NumpyDoc`."""
-type RegularSection = list[str]
+RegularSection: TypeAlias = list[str]
 """One list element per (unstripped) line of input."""

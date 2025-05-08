@@ -1,0 +1,9 @@
+[core]
+    analytics = false
+[exp]
+    auto_push = False
+[hydra]
+    enabled = True
+/config.local
+/tmp
+/cache

@@ -1,0 +1,36 @@
+stages:
+  binarize:
+    cmd: pwsh -Command "./Invoke-Uv amsl-labjack-pipeline stage binarize --scale ${stage.scale} --marker-scale ${stage.marker_scale} --precision ${stage.precision} --display-rows ${stage.display_rows}"
+    deps:
+      - packages/_pipeline/amsl_labjack_pipeline/stages/binarize
+      - data/large_sources
+    outs:
+      - data/sources:
+          persist: true
+      - data/rois:
+          persist: true
+    params:
+      - stage
+  convert:
+    cmd: pwsh -Command "./Invoke-Uv amsl-labjack-pipeline stage convert --scale ${stage.scale} --marker-scale ${stage.marker_scale} --precision ${stage.precision} --display-rows ${stage.display_rows}"
+    deps:
+      - packages/_pipeline/amsl_labjack_pipeline/stages/convert
+      - data/cines
+    outs:
+      - data/large_sources:
+          cache: false
+          persist: true
+          push: false
+      - data/headers:
+          persist: true
+    params:
+      - stage
+  skip_cloud:
+    cmd: pwsh -Command "./Invoke-Uv amsl-labjack-pipeline stage skip-cloud --scale ${stage.scale} --marker-scale ${stage.marker_scale} --precision ${stage.precision} --display-rows ${stage.display_rows}"
+    outs:
+      - data/cines:
+          cache: false
+          persist: true
+          push: false
+    params:
+      - stage

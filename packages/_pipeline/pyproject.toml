@@ -1,0 +1,58 @@
+[build-system]
+requires = ["flit_core==3.9.0"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "amsl-labjack-pipeline"
+version = "0.0.0"
+description = "Data pipeline"
+dependencies = [
+  "astroid>=3.3.1",
+  "cappa>=0.22.4",
+  "colorcet>=3.0.1",
+  "copykitten>=1.1.1",
+  "cyclopts>=2.9.3",
+  "dvc>=3.55.2",
+  "imageio[pyav]>=2.34.1",
+  "ipython>=8.26.0",
+  "loguru>=0.7.3",
+  "matplotlib>=3.7.2",
+  "more-itertools>=10.4.0",
+  "numpy>=1.24.4",
+  "numpydantic>=1.6.4",
+  "pandas[hdf5,performance]>=2.2.2",
+  "pillow>=10.3.0",
+  "pint>=0.24.4",
+  "pyarrow>=14.0.1",
+  "pydantic>=2.9.1",
+  "pyqtgraph>=0.13.3",
+  "pyside6>=6.7.2",
+  "pyyaml>=6.0.2",
+  "ruamel.yaml>=0.17.32",
+  "scikit-image>=0.23.1",
+  "scipy>=1.11.1",
+  "seaborn>=0.13.2",
+  "sparklines>=0.4.2",
+  "stopit>=1.1.2",
+  "sympy>=1.12",
+  "tomlkit>=0.12.4",
+  "tqdm>=4.66.3",
+  "watchfiles>=0.22.0",
+  "xarray[accel,io,parallel]>=2023.7.0",
+]
+[project.scripts]
+"amsl-labjack-pipeline" = "amsl_labjack_pipeline.__main__:main"
+
+[tool.fawltydeps]
+deps = ["packages/pipeline/pyproject.toml"]
+code = ["packages/pipeline/amsl_labjack_pipeline"]
+ignore_undeclared = [
+  "boilercore",
+  "amsl_labjack_dev",
+  "amsl_labjack_pipeline",
+  "cachier",
+  "context_models",
+]
+ignore_unused = [
+  "pyarrow", # Used in `amsl_labjack_pipeline.__init__`
+]
