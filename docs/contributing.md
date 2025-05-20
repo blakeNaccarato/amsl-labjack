@@ -44,7 +44,7 @@ This project and its guide are set up to smooth out that learning curve for you 
 
 To make a new contribution, fork this repository, clone it, switch to a new branch (please don't commit directly to `main`), run [`scripts/Sync-Py.ps1`](<https://github.com/blakeNaccarato/amsl-labjack/blob/main/scripts/Sync-Py.ps1>), make changes, commit and push them, and open a Pull Request targeting `main`. You may also open a draft Pull Request if you want feedback before your branch is ready to merge, but remember to mention (`@`) us. In more detail:
 
-- Perform first-time setup, including installing [cross-platform PowerShell](#cross-platform-powershell) and Python 3.12 [(details)](#first-time-setup).
+- Perform first-time setup, including installing [cross-platform PowerShell](#cross-platform-powershell) and Python 3.11 [(details)](#first-time-setup).
 - Fork the repository by selecting "Fork" near the top-right corner of the project page on GitHub. Clone your fork and open it locally, e.g. in VSCode [(details)](#fork-and-clone).
 - If using VSCode, consider installing the recommended extensions when prompted [(details)](#installing-recommended-extensions-in-vscode).
 - Create a new branch and switch to it, e.g. `git checkout -b my-new-feature` or in VSCode or select `+` in the GitLens branches view ([Palette: `GitLens: Show Branches View`](#vscode-command-palette)).
@@ -236,7 +236,7 @@ If done via the VSCode UI, click `Open` when prompted to open your newly-created
 If you missed your chance on initial setup, you can still set the Python interpreter at any point. This will select the [virtual environment](#virtual-environment) for the workspace folder, and allow your Python scripts to leverage the packages we have installed from `requirements.txt`.
 
 - Open the main script in your Gist, e.g. `example.py`
-- Check for `venv` in the bottom-right corner of VSCode, e.g. `3.12.# 64-bit (.venv: venv)`
+- Check for `venv` in the bottom-right corner of VSCode, e.g. `3.11.# 64-bit (.venv: venv)`
 - If you don't see `venv`, click the version number to select the option with `.venv` in it
 
 [Workflow](#workflow)
@@ -397,7 +397,7 @@ One-time setup for Python dev tools on Windows. Installs Python, VSCode, Windows
 #>
 
 # Install Python
-winget install --id 'Python.Python.3.12' --override '/quiet PrependPath=0'
+winget install --id 'Python.Python.3.11' --override '/quiet PrependPath=0'
 # Install VSCode
 winget install --id 'Microsoft.VisualStudioCode'
 # Install Windows Terminal
