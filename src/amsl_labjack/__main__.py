@@ -26,7 +26,7 @@ else:
     from pyqtgraph.Qt.QtCore import Qt, Signal
     from pyqtgraph.Qt.QtGui import QKeyEvent
 
-
+# TODO: Swap for datetime axis like in `boilerdaq`
 # TODO: Configure channel/DAQ settings to load from TOML config model
 
 WAVEFORM_CHANNEL = 0
