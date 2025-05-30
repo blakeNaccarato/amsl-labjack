@@ -155,8 +155,10 @@
   // * MyST
   "myst.preview.extensions": ["colon_fence", "dollarmath"],
   // * Python
-  "python.terminal.activateEnvInCurrentTerminal": false,
-  "python.terminal.activateEnvironment": false,
+  "python.createEnvironment.contentButton": "show",
+  "python.createEnvironment.trigger": "prompt",
+  "python.terminal.activateEnvInCurrentTerminal": true,
+  "python.terminal.activateEnvironment": true,
   // * Pylance
   "editor.inlayHints.enabled": "offUnlessPressed",
   "python.analysis.autoFormatStrings": true,

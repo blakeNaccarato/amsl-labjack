@@ -89,9 +89,9 @@ def get_amsl_labjack_pipeline_config(
 class AmslLabJackPipelineContextStore(ContextStore):
     """Context model for {mod}`~amsl_labjack_pipeline`."""
 
-    model_config: ClassVar[AmslLabJackPipelineConfigDict] = (
+    model_config: ClassVar[AmslLabJackPipelineConfigDict] = (  # pyright: ignore[reportIncompatibleVariableOverride]
         get_amsl_labjack_pipeline_config()
-    )  # pyright: ignore[reportIncompatibleVariableOverride]
+    )
     context: HiddenContext = AmslLabJackPipelineContexts(  # pyright: ignore[reportIncompatibleVariableOverride]
         amsl_labjack_pipeline=AmslLabJackPipelineContext()
     )

@@ -18,7 +18,12 @@ classifiers = [
   # "Programming Language :: Python :: 3.13",  # ? (via myst-nb) https://github.com/crate-py/rpds/issues/72
   # "Programming Language :: Python :: 3.14",  # ? Not yet beta (https://peps.python.org/pep-0745)
 ]
-dependencies = ["dwfpy>=1.2.0", "pyqtgraph>=0.13.7", "pyside6>=6.9.0"]
+dependencies = [
+  "dwfpy>=1.2.0",
+  "labjack-ljm>=1.23.0",
+  "pyqtgraph>=0.13.7",
+  "pyside6>=6.7.1",
+]
 [project.urls]
 Changes = "https://blakeNaccarato.github.io/amsl-labjack/changelog.html"
 Docs = "https://blakeNaccarato.github.io/amsl-labjack"
@@ -74,6 +79,10 @@ constraint-dependencies = [
   # ? https://nvd.nist.gov/vuln/detail/CVE-2024-37891
   # ? via sphinx
   "urllib3>=2.2.2",
+  # ? Causes the following message: qt.core.qobject.connect: QObject::connect(QStyleHints, QStyleHints): unique connections require a pointer to member function of a QObject subclass
+  # ? Discussed in: https://github.com/pyqtgraph/pyqtgraph/issues/3224
+  # ? Fixed in this PR, unreleased: https://github.com/pyqtgraph/pyqtgraph/pull/3145
+  "pyside6<6.7.2",
 ]
 [tool.uv.pip]
 python-version = "3.11"
@@ -152,7 +161,13 @@ include = [
   "scripts",
   "tests",
 ]
-ignore = ["**/.*", "*:/**/.*", "*:/**/appdata", "typings"]
+ignore = [
+  "**/.*",
+  "*:/**/.*",
+  "*:/**/appdata",
+  "packages/boilercore",
+  "packages/context-models",
+]
 # Default "true" in strict
 analyzeUnannotatedFunctions = true
 strictParameterNoneValue = true
