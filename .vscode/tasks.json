@@ -188,14 +188,14 @@
     {
       "label": "task: Profile this file",
       "type": "shell",
-      "command": "./Invoke-Uv.ps1 cProfile -o .prof ${file}",
+      "command": "./j.ps1 pym cProfile '-o' .prof ${file}",
       "icon": { "id": "graph-line" },
       "problemMatcher": []
     },
     {
       "label": "task: View profile results with snakeviz",
       "type": "shell",
-      "command": "./Invoke-Uv.ps1 snakeviz .prof",
+      "command": "./j.ps1 uvr snakeviz .prof",
       "icon": { "id": "graph-line" },
       "problemMatcher": []
     },

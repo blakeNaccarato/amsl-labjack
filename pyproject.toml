@@ -19,10 +19,12 @@ classifiers = [
   # "Programming Language :: Python :: 3.14",  # ? Not yet beta (https://peps.python.org/pep-0745)
 ]
 dependencies = [
-  "dwfpy>=1.2.0",
   "labjack-ljm>=1.23.0",
+  "nptyping>=2.5.0",
+  "numpy>=1.25.0",
   "pyqtgraph>=0.13.7",
   "pyside6>=6.7.1",
+  "structlog>=25.4.0",
 ]
 [project.urls]
 Changes = "https://blakeNaccarato.github.io/amsl-labjack/changelog.html"
@@ -112,6 +114,10 @@ source = [
 [tool.fawltydeps]
 deps = ["pyproject.toml"]
 code = ["src"]
+ignore_unused = ["pyside6"]
+[tool.fawltydeps.custom_mapping]
+ruamel-yaml = ["ruamel"]
+
 
 [tool.pytest.ini_options]
 addopts = """
@@ -304,6 +310,7 @@ ignore = [
   "EM",      # Don't check for exception message issues
   "ERA",     # False positives. Don't get rid of commented out code.
   "FBT",     # Allow boolean "traps"
+  "F722",    # Numpytyping
   "FIX002",  # Allow TODOs
   "FLY002",  # Allow different string representations
   "FURB118", # Incorrectly applies `itemgetter`
