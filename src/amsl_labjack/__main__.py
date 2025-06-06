@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+import _csv  # pyright: ignore[reportAssignmentType]
 import csv
 from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from time import sleep
 from typing import Literal, TypeAlias
 
 from labjack import ljm
@@ -32,83 +32,129 @@ from labjack.ljm.constants import (
     dtT8,
 )
 from nptyping import Float, NDArray, Shape
-from numpy import arange, array, concatenate
-from pyqtgraph import GraphicsLayoutWidget, PlotDataItem, intColor, mkQApp
+from numpy import arange, array, concatenate, nan
+from pyqtgraph import (
+    GraphicsLayoutWidget,
+    PlotDataItem,
+    PlotItem,
+    ViewBox,
+    intColor,
+    mkQApp,
+)
 from pyqtgraph.Qt import QtCore
 from pyqtgraph.Qt.QtCore import Qt
 from pyqtgraph.Qt.QtGui import QKeyEvent
+from pyqtgraph.Qt.QtWidgets import QApplication
 from structlog import get_logger
 
 log = get_logger()
 
 
 def main():
-    with get_device(
-        channels=[
-            Channel(
-                number=i,
-                range=11.0,  # (+/- V) Max 11.0 for T8
-            )
-            for i in range(8)
-        ],
+    get_stream(
         model="T8",
-        connection="Ethernet",  # Alt: "USB"
-        identifier="192.168.1.3",  # Alt: "480010801" (serial number),
-    ) as labjack:
-        stream(labjack, callback=callback, plot_period=1.0)
+        connection="USB",  # Alt: "Ethernet"
+        identifier="480010801",  # Alt: "192.168.1.3" (IP)
+        nominal_rate=10_000,
+        chunk_period=4.0,
+        dac1_square_wave=True,
+        path=Path("data/data.csv"),
+        channels=[Channel(number=i, range="4.8") for i in range(8)],
+        after_each_read=lambda stream: (
+            stream.window.exit.emit() if stream.time[-1] > 30.0 else None
+        ),
+    )
 
 
-def callback(stream_: Stream):
-    if stream_.time[-1] > 10.0:
-        stream_.exit()
+def get_stream(
+    model: Model | None,
+    connection: Connection | None,
+    identifier: str | None,
+    channels: Sequence[Channel],
+    after_each_read: Callable[[Stream], None],
+    chunk_period: float,
+    dac1_square_wave: bool,
+    nominal_rate: int,
+    path: Path,
+):
+    with (
+        get(
+            connection=connection,
+            model=model,
+            identifier=identifier,
+            channels=channels,
+            dac1_square_wave=dac1_square_wave,
+        ) as lj,
+        stream_data(
+            after_each_read=after_each_read,
+            lj=lj,
+            path=path,
+            chunk_period=chunk_period,
+            nominal_rate=nominal_rate,
+        ) as _stream,
+    ):
+        pass
 
 
 @contextmanager
-def get_device(
+def get(
+    model: Model | None,
+    connection: Connection | None,
+    identifier: str | None,
     channels: Sequence[Channel],
-    model: Model | None = None,
-    connection: Connection | None = None,
-    identifier: str | None = None,
+    dac1_square_wave: bool,
 ) -> Generator[LabJack]:
     """Get LabJack handle info."""
     for name, value in {
-        "LJM_STREAM_BUFFER_MAX_NUM_SECONDS": 40,  # (s) Up from default 20 s
-        "LJM_STREAM_TCP_RECEIVE_BUFFER_SIZE": (24 * 2**10),  # (KiB) COMMAREA rec.
-        "LJM_DEBUG_LOG_MODE": DEBUG_LOG_MODE_NEVER,  # Ensures no logging
+        "DEBUG_LOG_MODE": DEBUG_LOG_MODE_NEVER,
+        **{
+            f"STREAM_{k}": v
+            for k, v in {
+                "BUFFER_MAX_NUM_SECONDS": 40,  # (s) Up from default 20 s
+                "TCP_RECEIVE_BUFFER_SIZE": (24 * 2**10),  # (KiB) COMMAREA rec.
+            }.items()
+        },
     }.items():
-        writeLibraryConfigS(name, value)
-    handle = 0
+        writeLibraryConfigS(f"LJM_{name}", value)
+    handle = None
     try:
-        handle = open_labjack(model, connection, identifier)
+        handle = ljm.open(
+            connectionType=connections[connection] if connection else dtANY,
+            deviceType=models[model] if model else dtANY,
+            identifier=identifier or "ANY",
+        )
+        eStreamStop(handle)
         channel_names: list[str] = []
         channel_addresses: list[int] = []
-        eStreamStop(handle)
         for channel in channels:
             name = f"AIN{channel.number}"
-            eWriteName(handle, f"{name}_RANGE", channel.range)
+            eWriteName(handle=handle, name=f"{name}_RANGE", value=float(channel.range))
             channel_names.append(name)
             channel_addresses.append(nameToAddress(name)[0])
         for name, value in {
-            "STREAM_TRIGGER_INDEX": 0,  # Ensure default 0 (automatic)
-            "STREAM_CLOCK_SOURCE": 0,  # Ensure default 0 (automatic)
-            "STREAM_RESOLUTION_INDEX": 0,  # Ensure default 0 (automatic)
-            "STREAM_BUFFER_SIZE_BYTES": (256 * 2**10),  # (KiB) Max 256 KiB for T8
-            "DAC1_FREQUENCY_OUT_ENABLE": 1,  # Square wave on DAC1 for testing
+            **({"DAC1_FREQUENCY_OUT_ENABLE": 1} if dac1_square_wave else {}),
+            **{
+                f"STREAM_{k}": v
+                for k, v in {
+                    "BUFFER_SIZE_BYTES": (256 * 2**10),  # (KiB) Max 256 KiB for T8
+                    "CLOCK_SOURCE": 0,  # Ensure default 0 (automatic)
+                    "RESOLUTION_INDEX": 0,  # Ensure default 0 (automatic)
+                    "TRIGGER_INDEX": 0,  # Ensure default 0 (automatic)
+                }.items()
+            },
         }.items():
-            eWriteName(handle, name, value)
+            eWriteName(handle=handle, name=name, value=value)
         info = getHandleInfo(handle)
         lj = LabJack(
-            handle=handle,
-            model=dict(zip(models.values(), models.keys(), strict=False))[info[0]],
             connection=dict(
                 zip(connections.values(), connections.keys(), strict=False)
             )[info[1]],
-            serial_number=info[2],
+            handle=handle,
             ip_address=numberToIP(info[3]),
-            port=info[4],
             max_bytes_per_mb=info[5],
-            nominal_rate=(r := 20_000),  # (Hz) Max for T8 is 43_399 Hz
-            scans_per_read=int(0.1 * r),  # ~4096 at max rate
+            model=dict(zip(models.values(), models.keys(), strict=False))[info[0]],
+            port=info[4],
+            serial_number=info[2],
             signals=[
                 Signal(name=name, address=address, config=config)
                 for name, address, config in zip(
@@ -120,188 +166,216 @@ def get_device(
             "labjack_connected",
             lj={k: v for k, v in asdict(lj).items() if k != "signals"},
         )
-        eStreamStop(lj.handle)
         yield lj
     finally:
         if handle:
             ljm.close(handle)
 
 
-POWER_CYCLE_LABJACK_MSG = "Unplug LabJack and plug it back in."
-
-
-def open_labjack(
-    model: Model | None = None,
-    connection: Connection | None = None,
-    identifier: str | None = None,
-):
-    return ljm.open(
-        deviceType=models[model] if model else dtANY,
-        connectionType=connections[connection] if connection else dtANY,
-        identifier=identifier or "ANY",
-    )
-
-
-Model: TypeAlias = Literal["T8"]
-models: dict[Model, int] = {"T8": dtT8}
-Connection: TypeAlias = Literal["USB", "Ethernet"]
-connections: dict[Connection, int] = {"USB": ctUSB, "Ethernet": ctETHERNET}
-
-
-def stream(lj: LabJack, callback: Callable[[Stream], None], plot_period: float):
-    app = mkQApp()
-    app.setStyle("Fusion")
-    window = GraphicsLayoutWidgetWithKeySignal()
-
-    def quit_on_certain_keys(ev: QKeyEvent):
-        """Handle quit events and propagate keypresses to image views."""
-        if ev.key() in (Qt.Key.Key_Escape, Qt.Key.Key_Q, Qt.Key.Key_Enter):
-            window.exit.emit()
-
-    def raise_exception(exception: Exception):
-        window.exit.emit()
-        raise exception
-
-    window.key.connect(quit_on_certain_keys)
-    window.exit.connect(app.closeAllWindows)
-    window.exception.connect(raise_exception)
-    name = "Voltage"
-    units = "V"
-    plot = window.ci.addPlot(0, 0)
-    plot.addLegend()
-    plot.setLabel("bottom", "Time", units="s")
-    plot.setLabel("left", units=units)
-    plot.setTitle(name)
+@contextmanager
+def stream_data(
+    after_each_read: Callable[[Stream], None],
+    chunk_period: float,
+    lj: LabJack,
+    nominal_rate: int,
+    path: Path,
+) -> Generator[Stream]:
+    app = get_app()
     time = array([0.0])
     signals: list[SignalData] = []
     for i, channel in enumerate(lj.signals):
-        data = array([0.0])
+        data = array([nan])
         signals.append(
             SignalData(
                 data=data,
-                plot=plot.plot(time, data, pen=intColor(i), name=channel.name),
+                plot=app.plot.plot(time, data, pen=intColor(i), name=channel.name),
                 source=channel,
             )
         )
-    path = Path("data/data.csv")
-    with path.open("w", newline="", encoding="utf-8") as csv_file:
-        writer = csv.writer(csv_file)
-        header = ["Time (s)"] + [signal.source.name for signal in signals]
-        writer.writerow(header)
-    sleep(0.5)  # LabJack T8 requires at least ~0.3 s to restart a stream
-    stream_ = None
+    stream = None
     try:
-        stream_ = Stream(
-            lj=lj,
-            start=datetime.now(),
-            time=time,
-            signals=signals,
-            window=window,
-            plot_period=plot_period,
-            path=path,
-            rate=eStreamStart(
-                handle=lj.handle,
-                aScanList=[signal.address for signal in lj.signals],
-                numAddresses=len(lj.signals),
-                scanRate=lj.nominal_rate,
-                scansPerRead=lj.scans_per_read,
-            ),
+        scans_per_read = int(READ_RATE_RATIO * nominal_rate)
+        rate = eStreamStart(
+            aScanList=[signal.address for signal in lj.signals],
+            handle=lj.handle,
+            numAddresses=len(lj.signals),
+            scanRate=nominal_rate,
+            scansPerRead=scans_per_read,
         )
-        setStreamCallback(lj.handle, lambda _handle: callback_(stream_, callback))
-        window.show()
-        app.exec()
-    finally:
-        if stream_:
-            write(stream_, stream_.time, [signal.data for signal in stream_.signals])
-        eStreamStop(lj.handle)
-        app.quit()
-
-
-def callback_(stream_: Stream, callback: Callable[[Stream], None]):
-    try:
-        period = int(stream_.plot_period * stream_.rate)
-        data, _device_scan_backlog, _ljm_scan_backlog = eStreamRead(stream_.lj.handle)
-        data = array(data)
-        if DUMMY_VALUE in data:
-            stream_.window.exception.emit(RuntimeError("Auto-recovery mode entered."))
-        stream_.time = concatenate([
-            stream_.time,
-            (
-                arange(len(data) // len(stream_.signals)) / stream_.rate
-                + stream_.time[-1]
+        stream = Stream(
+            chunk_period=chunk_period,
+            lj=lj,
+            path=path.with_stem(
+                f"{path.stem}_{datetime.now().isoformat(timespec='seconds').replace(':', '')}"
             ),
-        ])
-        time = None
-        if len(stream_.time) > period:
-            time = stream_.time[:period]
-            stream_.time = stream_.time[-period:]
-        signals_data: list[Vector] = []
-        for i, signal in enumerate(stream_.signals):
-            signal.data = concatenate([signal.data, data[i :: len(stream_.signals)]])
-            if len(signal.data) > period:
-                signals_data.append(signal.data[:period])
-                signal.data = signal.data[-period:]
-            if stream_.window.isVisible():
-                signal.plot.setData(stream_.time, signal.data)
-        if time is not None:
-            write(stream_, time, signals_data)
-        callback(stream_)
+            period=1 / rate,
+            rate=rate,
+            read_period=1 / scans_per_read,
+            scans_per_chunk=int(chunk_period * nominal_rate),
+            scans_per_read=scans_per_read,
+            signals=signals,
+            time=time,
+            viewbox=app.plot.vb,  # pyright: ignore[reportArgumentType]
+            window=app.window,
+            writer=None,  # pyright: ignore[reportArgumentType] # ? Assigned just below
+        )
+        log.info(
+            "stream_started",
+            stream={
+                k: stream.__dict__[k]
+                for k in stream.__dict__
+                if k not in ["lj", "time", "signals", "viewbox", "window", "writer"]
+            },
+        )
+        with stream.path.open("w", newline="", encoding="utf-8") as file:
+            stream.writer = csv.writer(file)
+            stream.writer.writerow(
+                ["Time (s)"] + [signal.source.name for signal in signals]
+            )
+            yield stream
+            setStreamCallback(
+                handle=stream.lj.handle,
+                callback=lambda _handle: on_read_ready(stream, after_each_read),
+            )
+            stream.window.show()
+            app.root.exec()
+    finally:
+        eStreamStop(lj.handle)
+        app.root.quit()
+        if stream:
+            with path.open("a", newline="", encoding="utf-8") as file:
+                write(
+                    csv.writer(file),
+                    stream.time,
+                    [signal.data for signal in stream.signals],
+                )
+
+
+READ_RATE_RATIO = 0.1
+"""Suitable ratio of read rate to nominal rate for most plot/read loops."""
+
+
+def get_app() -> App:
+    root = mkQApp()
+    root.setStyle("Fusion")
+    window = GraphicsLayoutWidgetWithKeySignal()
+    window.key.connect(lambda ev: quit_on_certain_keys(ev, window))
+    window.exit.connect(root.closeAllWindows)
+    window.exception.connect(lambda exc: raise_exception(exc, window))
+    plot = window.ci.addPlot(0, 0)
+    plot.addLegend()
+    plot.setLabel("bottom", "Time", units="s")
+    plot.setLabel("left", units="V")
+    plot.setTitle("Voltage")
+    return App(root=root, plot=plot, window=window)
+
+
+@dataclass
+class App:
+    root: QApplication
+    plot: PlotItem
+    window: GraphicsLayoutWidgetWithKeySignal
+
+
+def quit_on_certain_keys(ev: QKeyEvent, window: GraphicsLayoutWidgetWithKeySignal):
+    """Handle quit events and propagate keypresses to image views."""
+    if ev.key() in (Qt.Key.Key_Escape, Qt.Key.Key_Q, Qt.Key.Key_Enter):
+        window.exit.emit()
+
+
+def raise_exception(exception: Exception, window: GraphicsLayoutWidgetWithKeySignal):
+    window.exit.emit()
+    raise exception
+
+
+def on_read_ready(stream: Stream, after_each_read: Callable[[Stream], None]):
+    try:
+        signal_data, _lj_backlog, _local_backlog = eStreamRead(stream.lj.handle)
+        if DUMMY_VALUE in signal_data:
+            stream.window.exception.emit(RuntimeError("Auto-recovery mode entered."))
+        read_time = stream.time[-1] + (
+            stream.period * arange(1, stream.scans_per_read + 1)
+        )
+        stream.time = concatenate([stream.time, read_time])
+        if stream.window.isVisible():
+            stream.viewbox.setXRange(
+                stream.time[-1] - stream.chunk_period, stream.time[-1], padding=0
+            )
+        signal_data_chunks: list[Vector] = []
+        get_chunk = len(stream.time) > 2 * stream.scans_per_chunk  # Keep tailing chunk
+        for signal_index, signal in enumerate(stream.signals):
+            signal.data = concatenate([
+                signal.data,
+                signal_data[signal_index :: len(stream.signals)],
+            ])
+            update_plot(stream=stream, signal_index=signal_index)
+            if get_chunk:
+                signal_data_chunks.append(signal.data[: stream.scans_per_chunk])
+                signal.data = signal.data[stream.scans_per_chunk :]
+        if get_chunk:
+            time_chunk = stream.time[: stream.scans_per_chunk]
+            stream.time = stream.time[stream.scans_per_chunk :]
+            write(stream.writer, time_chunk, signal_data_chunks)
+        after_each_read(stream)
     except Exception as e:
-        stream_.window.exception.emit(e)
+        stream.window.exception.emit(e)
         # sourcery skip: raise-specific-error
         raise Exception from e  # noqa: TRY002
 
 
-def write(stream_: Stream, time: Vector, signals_data: list[Vector]):
-    with stream_.path.open("a", newline="", encoding="utf-8") as csv_file:
-        writer = csv.writer(csv_file)
-        for i in range(len(time)):
-            writer.writerow([
-                time[i],
-                *[signal_data[i] for signal_data in signals_data],
-            ])
+def update_plot(stream: Stream, signal_index: int):
+    decimation = 10 if stream.scans_per_chunk > PLOT_POINTS_PER_CHUNK_LIMIT else 1
+    if stream.window.isVisible():
+        stream.signals[signal_index].plot.setData(
+            stream.time[-stream.scans_per_chunk : -1 : decimation],
+            stream.signals[signal_index].data[
+                -stream.scans_per_chunk : -1 : decimation
+            ],
+        )
+
+
+PLOT_POINTS_PER_CHUNK_LIMIT = 10_000
+"""More than this number and the plot window can become unresponsive."""
+
+
+def write(writer: _csv._writer, time: Vector, signals_data: list[Vector]):  # pyright: ignore[reportAttributeAccessIssue]
+    for i in range(len(time)):
+        writer.writerow([time[i], *[signal_data[i] for signal_data in signals_data]])
 
 
 @dataclass
-class Channel:
-    number: int
-    range: float
-
-
-@dataclass
-class Signal:
-    name: str
-    config: Channel
-    address: int
-
-
-@dataclass
-class LabJack:
-    model: Model
-    connection: Connection
-    handle: int
-    serial_number: int
-    ip_address: str
-    port: int
-    max_bytes_per_mb: int
-    nominal_rate: int
+class Stream:
+    chunk_period: float
+    lj: LabJack
+    path: Path
+    period: float
+    rate: float
+    read_period: float
+    scans_per_chunk: int
     scans_per_read: int
-    signals: list[Signal]
+    signals: list[SignalData]
+    time: Vector
+    viewbox: ViewBox
+    window: GraphicsLayoutWidgetWithKeySignal
+    writer: _csv._writer
 
 
 @dataclass
 class SignalData:
-    source: Signal
     data: Vector
     plot: PlotDataItem
+    source: Signal
+
+
+Vector: TypeAlias = NDArray[Shape["*, 1"], Float]
 
 
 class GraphicsLayoutWidgetWithKeySignal(GraphicsLayoutWidget):
     """Emit key signals on `key`."""
 
-    key = QtCore.Signal(QKeyEvent)
     exception = QtCore.Signal(Exception)
     exit = QtCore.Signal()
+    key = QtCore.Signal(QKeyEvent)
 
     def keyPressEvent(self, ev: QKeyEvent):  # noqa: N802
         """Handle keypresses."""
@@ -310,21 +384,51 @@ class GraphicsLayoutWidgetWithKeySignal(GraphicsLayoutWidget):
 
 
 @dataclass
-class Stream:
-    lj: LabJack
-    rate: float
-    start: datetime
-    time: Vector
-    signals: list[SignalData]
-    window: GraphicsLayoutWidgetWithKeySignal
-    plot_period: float
-    path: Path
-
-    def exit(self):
-        self.window.exit.emit()
+class LabJack:
+    connection: Connection
+    handle: int
+    model: Model
+    ip_address: str
+    max_bytes_per_mb: int
+    port: int
+    serial_number: int
+    signals: list[Signal]
 
 
-Vector: TypeAlias = NDArray[Shape["*, 1"], Float]
+Model: TypeAlias = Literal["T8"]
+models: dict[Model, int] = {"T8": dtT8}
+Connection: TypeAlias = Literal["USB", "Ethernet"]
+connections: dict[Connection, int] = {"USB": ctUSB, "Ethernet": ctETHERNET}
+
+
+@dataclass
+class Signal:
+    address: int
+    config: Channel
+    name: str
+
+
+@dataclass
+class Channel:
+    number: int
+    range: Range
+
+
+Range: TypeAlias = Literal[
+    "0.0",
+    "0.018",
+    "0.036",
+    "0.075",
+    "0.15",
+    "0.3",
+    "0.6",
+    "1.2",
+    "2.4",
+    "4.8",
+    "9.6",
+    "11.0",
+]
+
 
 if __name__ == "__main__":
     main()

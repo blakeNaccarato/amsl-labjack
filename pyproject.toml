@@ -114,6 +114,7 @@ source = [
 [tool.fawltydeps]
 deps = ["pyproject.toml"]
 code = ["src"]
+ignore_undeclared = ["_csv"]
 ignore_unused = ["pyside6"]
 [tool.fawltydeps.custom_mapping]
 ruamel-yaml = ["ruamel"]
