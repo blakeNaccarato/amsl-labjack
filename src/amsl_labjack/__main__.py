@@ -64,15 +64,23 @@ def main():
         identifier="192.168.1.3",  # Alt: "192.168.1.3" (IP) "480010801" or "480010558" (Serial)
         # connection="USB",  # Alt: "Ethernet", "USB"
         # identifier="480010558",  # Alt: "192.168.1.3" (IP) "480010801" or "480010558" (Serial)
-        nominal_rate=20_000,  # (Hz) # ! Unstable when < 20kHz
-        chunk_period=4.0,
-        dac1_square_wave=False,
+        nominal_rate=1_000,  # (Hz) # ! Unstable when < 20kHz
+        chunk_period=10.0,
+        dac1_square_wave=False,  # ! Disable during real experiment
         path=Path("data/data.csv"),
-        channels=[Channel(number=i, range="0.018") for i in range(1)],
-        after_each_read=lambda stream: (
-            # ? This function exits the stream after 30 seconds of data
-            stream.window.exit.emit() if stream.time[-1] > 30.0 else None
-        ),
+        channels=[
+            Channel(number=i, range="1.2", **c)
+            for i, c in enumerate([
+                {"name": "S1", "color": "red"},
+                {"name": "S2", "color": "green"},
+                {"name": "S3", "color": "blue"},
+                {"name": "S4", "color": "yellow"},
+            ])
+        ],
+        # after_each_read=lambda stream: (
+        #     # ? This function exits the stream after 30 seconds of data
+        #     stream.window.exit.emit() if stream.time[-1] > 10.0 else None
+        # ),
     )
 
 
@@ -81,11 +89,11 @@ def stream_data(
     connection: Connection | None,
     identifier: str | None,
     channels: Sequence[Channel],
-    after_each_read: Callable[[Stream], None],
     chunk_period: float,
     dac1_square_wave: bool,
     nominal_rate: int,
     path: Path,
+    after_each_read: Callable[[Stream], None] | None = None,
 ):
     with (
         get(
@@ -198,11 +206,11 @@ def open_device(
 
 @contextmanager
 def get_stream(
-    after_each_read: Callable[[Stream], None],
     chunk_period: float,
     lj: LabJack,
     nominal_rate: int,
     path: Path,
+    after_each_read: Callable[[Stream], None] | None = None,
 ) -> Generator[Stream]:
     app = get_app(lj)
     stream = None
@@ -229,7 +237,12 @@ def get_stream(
             signals=[
                 SignalData(
                     data=(data := array([nan])),
-                    plot=app.plot.plot(time, data, pen=intColor(i), name=channel.name),
+                    plot=app.plot.plot(
+                        time,
+                        data,
+                        pen=channel.config.color or intColor(i),
+                        name=channel.config.name or channel.name,
+                    ),
                     source=channel,
                 )
                 for i, channel in enumerate(lj.signals)
@@ -313,11 +326,14 @@ def exit_app(app: QApplication, lj: LabJack):
     app.closeAllWindows()
 
 
-def on_read_ready(stream: Stream, after_each_read: Callable[[Stream], None]):
+def on_read_ready(stream: Stream, after_read: Callable[[Stream], None] | None = None):
     try:
         signal_data, _lj_backlog, _local_backlog = eStreamRead(stream.lj.handle)
-        if DUMMY_VALUE in signal_data:
-            stream.window.exception.emit(RuntimeError("Auto-recovery mode entered."))
+        signal_data = array(signal_data)
+        signal_data[signal_data == DUMMY_VALUE] = nan
+        # TODO: Figure out dummy value handling
+        # if DUMMY_VALUE in signal_data:
+        #     stream.window.exception.emit(RuntimeError("Auto-recovery mode entered."))
         read_time = stream.time[-1] + (
             stream.period * arange(1, stream.scans_per_read + 1)
         )
@@ -341,7 +357,8 @@ def on_read_ready(stream: Stream, after_each_read: Callable[[Stream], None]):
             time_chunk = stream.time[: stream.scans_per_chunk]
             stream.time = stream.time[stream.scans_per_chunk :]
             write(stream.writer, time_chunk, signal_data_chunks)
-        after_each_read(stream)
+        if after_read:
+            after_read(stream)
     except Exception as e:
         stream.window.exception.emit(e)
         # sourcery skip: raise-specific-error
@@ -435,8 +452,10 @@ class Signal:
 
 @dataclass
 class Channel:
+    name: str | None
     number: int
     range: Range
+    color: str | None = None
 
 
 Range: TypeAlias = Literal[
