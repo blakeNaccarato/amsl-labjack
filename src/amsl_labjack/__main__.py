@@ -181,26 +181,14 @@ def stream_data(
     path: Path,
 ) -> Generator[Stream]:
     app = get_app()
-    time = array([0.0])
-    signals: list[SignalData] = []
-    for i, channel in enumerate(lj.signals):
-        data = array([nan])
-        signals.append(
-            SignalData(
-                data=data,
-                plot=app.plot.plot(time, data, pen=intColor(i), name=channel.name),
-                source=channel,
-            )
-        )
     stream = None
     try:
-        scans_per_read = int(READ_RATE_RATIO * nominal_rate)
         rate = eStreamStart(
             aScanList=[signal.address for signal in lj.signals],
             handle=lj.handle,
             numAddresses=len(lj.signals),
             scanRate=nominal_rate,
-            scansPerRead=scans_per_read,
+            scansPerRead=(scans_per_read := int(READ_RATE_RATIO * nominal_rate)),
         )
         stream = Stream(
             chunk_period=chunk_period,
@@ -213,8 +201,15 @@ def stream_data(
             read_period=1 / scans_per_read,
             scans_per_chunk=int(chunk_period * nominal_rate),
             scans_per_read=scans_per_read,
-            signals=signals,
-            time=time,
+            time=(time := array([0.0])),
+            signals=[
+                SignalData(
+                    data=(data := array([nan])),
+                    plot=app.plot.plot(time, data, pen=intColor(i), name=channel.name),
+                    source=channel,
+                )
+                for i, channel in enumerate(lj.signals)
+            ],
             viewbox=app.plot.vb,  # pyright: ignore[reportArgumentType]
             window=app.window,
             writer=None,  # pyright: ignore[reportArgumentType] # ? Assigned just below
@@ -230,7 +225,7 @@ def stream_data(
         with stream.path.open("w", newline="", encoding="utf-8") as file:
             stream.writer = csv.writer(file)
             stream.writer.writerow(
-                ["Time (s)"] + [signal.source.name for signal in signals]
+                ["Time (s)"] + [signal.source.name for signal in stream.signals]
             )
             yield stream
             setStreamCallback(
@@ -240,15 +235,15 @@ def stream_data(
             stream.window.show()
             app.root.exec()
     finally:
-        eStreamStop(lj.handle)
-        app.root.quit()
         if stream:
-            with path.open("a", newline="", encoding="utf-8") as file:
+            with stream.path.open("a", newline="", encoding="utf-8") as file:
                 write(
                     csv.writer(file),
                     stream.time,
                     [signal.data for signal in stream.signals],
                 )
+        eStreamStop(lj.handle)
+        app.root.quit()
 
 
 READ_RATE_RATIO = 0.1
