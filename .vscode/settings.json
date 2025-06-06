@@ -196,8 +196,8 @@
     "generateSymbol": true
   },
   "python.analysis.fixAll": [
-    "source.convertImportFormat",
-    "source.unusedImports"
+    "source.convertImportFormat"
+    // "source.unusedImports"  // ! Removes false positives introducing errors!
   ],
   "python.analysis.packageIndexDepths": [
     { "name": "", "depth": 16, "includeAllSymbols": true }

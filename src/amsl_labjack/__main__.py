@@ -8,11 +8,15 @@ from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import datetime
+from os import kill
 from pathlib import Path
+from re import search
+from signal import SIGTERM
 from typing import Literal, TypeAlias
 
 from labjack import ljm
 from labjack.ljm import (
+    LJMError,
     eStreamRead,
     eStreamStart,
     eStreamStop,
@@ -49,24 +53,30 @@ from structlog import get_logger
 
 log = get_logger()
 
+READ_RATE_RATIO = 0.1
+"""Suitable ratio of read rate to nominal rate for most plot/read loops."""
+
 
 def main():
-    get_stream(
+    stream_data(
         model="T8",
-        connection="USB",  # Alt: "Ethernet"
-        identifier="480010801",  # Alt: "192.168.1.3" (IP)
-        nominal_rate=10_000,
+        connection="Ethernet",  # Alt: "Ethernet", "USB"
+        identifier="192.168.1.3",  # Alt: "192.168.1.3" (IP) "480010801" or "480010558" (Serial)
+        # connection="USB",  # Alt: "Ethernet", "USB"
+        # identifier="480010558",  # Alt: "192.168.1.3" (IP) "480010801" or "480010558" (Serial)
+        nominal_rate=20_000,  # (Hz) # ! Unstable when < 20kHz
         chunk_period=4.0,
-        dac1_square_wave=True,
+        dac1_square_wave=False,
         path=Path("data/data.csv"),
-        channels=[Channel(number=i, range="4.8") for i in range(8)],
+        channels=[Channel(number=i, range="0.018") for i in range(1)],
         after_each_read=lambda stream: (
+            # ? This function exits the stream after 30 seconds of data
             stream.window.exit.emit() if stream.time[-1] > 30.0 else None
         ),
     )
 
 
-def get_stream(
+def stream_data(
     model: Model | None,
     connection: Connection | None,
     identifier: str | None,
@@ -85,7 +95,7 @@ def get_stream(
             channels=channels,
             dac1_square_wave=dac1_square_wave,
         ) as lj,
-        stream_data(
+        get_stream(
             after_each_read=after_each_read,
             lj=lj,
             path=path,
@@ -110,19 +120,23 @@ def get(
         **{
             f"STREAM_{k}": v
             for k, v in {
-                "BUFFER_MAX_NUM_SECONDS": 40,  # (s) Up from default 20 s
-                "TCP_RECEIVE_BUFFER_SIZE": (24 * 2**10),  # (KiB) COMMAREA rec.
+                "BUFFER_MAX_NUM_SECONDS": 20,  # (s) Default 20 s
+                "TCP_RECEIVE_BUFFER_SIZE": (24 * 2**10),  # (KiB) COMMAREA rec. <24
             }.items()
         },
     }.items():
         writeLibraryConfigS(f"LJM_{name}", value)
     handle = None
     try:
-        handle = ljm.open(
-            connectionType=connections[connection] if connection else dtANY,
-            deviceType=models[model] if model else dtANY,
-            identifier=identifier or "ANY",
-        )
+        try:
+            handle = open_device(model, connection, identifier)
+        except LJMError as e:
+            match = search(r"pid (\d+)", e.errorString)
+            if not match:
+                raise LJMError from e
+            pid = int(match[1])
+            kill(pid, SIGTERM)
+            handle = open_device(model, connection, identifier)
         eStreamStop(handle)
         channel_names: list[str] = []
         channel_addresses: list[int] = []
@@ -136,7 +150,7 @@ def get(
             **{
                 f"STREAM_{k}": v
                 for k, v in {
-                    "BUFFER_SIZE_BYTES": (256 * 2**10),  # (KiB) Max 256 KiB for T8
+                    "BUFFER_SIZE_BYTES": 0,  # (KiB) <256 KiB T8, default 0 (automatic)
                     "CLOCK_SOURCE": 0,  # Ensure default 0 (automatic)
                     "RESOLUTION_INDEX": 0,  # Ensure default 0 (automatic)
                     "TRIGGER_INDEX": 0,  # Ensure default 0 (automatic)
@@ -172,15 +186,25 @@ def get(
             ljm.close(handle)
 
 
+def open_device(
+    model: Model | None, connection: Connection | None, identifier: str | None
+) -> int:
+    return ljm.open(
+        connectionType=connections[connection] if connection else dtANY,
+        deviceType=models[model] if model else dtANY,
+        identifier=identifier or "ANY",
+    )
+
+
 @contextmanager
-def stream_data(
+def get_stream(
     after_each_read: Callable[[Stream], None],
     chunk_period: float,
     lj: LabJack,
     nominal_rate: int,
     path: Path,
 ) -> Generator[Stream]:
-    app = get_app()
+    app = get_app(lj)
     stream = None
     try:
         rate = eStreamStart(
@@ -246,17 +270,15 @@ def stream_data(
         app.root.quit()
 
 
-READ_RATE_RATIO = 0.1
-"""Suitable ratio of read rate to nominal rate for most plot/read loops."""
-
-
-def get_app() -> App:
+def get_app(lj: LabJack) -> App:
     root = mkQApp()
     root.setStyle("Fusion")
     window = GraphicsLayoutWidgetWithKeySignal()
-    window.key.connect(lambda ev: quit_on_certain_keys(ev, window))
-    window.exit.connect(root.closeAllWindows)
-    window.exception.connect(lambda exc: raise_exception(exc, window))
+    window.key.connect(lambda ev: quit_on_certain_keys(ev=ev, window=window))
+    window.exit.connect(lambda: exit_app(app=root, lj=lj))
+    window.exception.connect(
+        lambda exc: raise_exception(exception=exc, lj=lj, window=window)
+    )
     plot = window.ci.addPlot(0, 0)
     plot.addLegend()
     plot.setLabel("bottom", "Time", units="s")
@@ -278,9 +300,17 @@ def quit_on_certain_keys(ev: QKeyEvent, window: GraphicsLayoutWidgetWithKeySigna
         window.exit.emit()
 
 
-def raise_exception(exception: Exception, window: GraphicsLayoutWidgetWithKeySignal):
+def raise_exception(
+    exception: Exception, lj: LabJack, window: GraphicsLayoutWidgetWithKeySignal
+):
+    eStreamStop(lj.handle)
     window.exit.emit()
     raise exception
+
+
+def exit_app(app: QApplication, lj: LabJack):
+    eStreamStop(lj.handle)
+    app.closeAllWindows()
 
 
 def on_read_ready(stream: Stream, after_each_read: Callable[[Stream], None]):
@@ -365,6 +395,18 @@ class SignalData:
 Vector: TypeAlias = NDArray[Shape["*, 1"], Float]
 
 
+@dataclass
+class LabJack:
+    connection: Connection
+    handle: int
+    model: Model
+    ip_address: str
+    max_bytes_per_mb: int
+    port: int
+    serial_number: int
+    signals: list[Signal]
+
+
 class GraphicsLayoutWidgetWithKeySignal(GraphicsLayoutWidget):
     """Emit key signals on `key`."""
 
@@ -376,18 +418,6 @@ class GraphicsLayoutWidgetWithKeySignal(GraphicsLayoutWidget):
         """Handle keypresses."""
         super().keyPressEvent(ev)
         self.key.emit(ev)
-
-
-@dataclass
-class LabJack:
-    connection: Connection
-    handle: int
-    model: Model
-    ip_address: str
-    max_bytes_per_mb: int
-    port: int
-    serial_number: int
-    signals: list[Signal]
 
 
 Model: TypeAlias = Literal["T8"]
