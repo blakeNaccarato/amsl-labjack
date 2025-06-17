@@ -14,6 +14,7 @@ from re import search
 from signal import SIGTERM
 from typing import Literal, TypeAlias
 
+import numpy as np
 from labjack import ljm
 from labjack.ljm import (
     LJMError,
@@ -57,14 +58,17 @@ READ_RATE_RATIO = 0.1
 """Suitable ratio of read rate to nominal rate for most plot/read loops."""
 
 
+# TODO: Implement smarter selecction with noise tables https://support.labjack.com/docs/a-3-3-2-t8-noise-and-resolution-t-series-datasheet#A-3-3-2T8NoiseandResolution[T-SeriesDatasheet]-Range:%C2%B11.2V
+
+
 def main():
     stream_data(
         model="T8",
-        connection="Ethernet",  # Alt: "Ethernet", "USB"
-        identifier="192.168.1.3",  # Alt: "192.168.1.3" (IP) "480010801" or "480010558" (Serial)
-        # connection="USB",  # Alt: "Ethernet", "USB"
-        # identifier="480010558",  # Alt: "192.168.1.3" (IP) "480010801" or "480010558" (Serial)
-        nominal_rate=1_000,  # (Hz) # ! Unstable when < 20kHz
+        # connection="Ethernet",  # Alt: "Ethernet", "USB"
+        # identifier="192.168.1.3",  # Alt: "192.168.1.3" (IP) "480010801" or "480010558" (Serial)
+        connection="USB",  # Alt: "Ethernet", "USB"
+        identifier="480010558",  # Alt: "192.168.1.3" (IP) "480010801" or "480010558" (Serial)
+        nominal_rate=10_200,  # (Hz) At +-1.2 V, 10.2kHz handles noise better than 10kHz, though 1kHz, 4kHz, and 8kHz are even better
         chunk_period=10.0,
         dac1_square_wave=False,  # ! Disable during real experiment
         path=Path("data/data.csv"),
@@ -123,6 +127,7 @@ def get(
     dac1_square_wave: bool,
 ) -> Generator[LabJack]:
     """Get LabJack handle info."""
+    # TODO: Handle emergent Ethernet weirdness after some period of use, related to register settings?
     for name, value in {
         "DEBUG_LOG_MODE": DEBUG_LOG_MODE_NEVER,
         **{
@@ -368,11 +373,20 @@ def on_read_ready(stream: Stream, after_read: Callable[[Stream], None] | None = 
 def update_plot(stream: Stream, signal_index: int):
     decimation = 10 if stream.scans_per_chunk > PLOT_POINTS_PER_CHUNK_LIMIT else 1
     if stream.window.isVisible():
+        # Apply a running average with a window of 2/60 seconds
+
+        window_size = max(1, int((2 / 60) / stream.period))
+        data = stream.signals[signal_index].data[
+            -stream.scans_per_chunk : -1 : decimation
+        ]
+        if len(data) >= window_size:
+            kernel = np.ones(window_size) / window_size
+            smoothed_data = np.convolve(data, kernel, mode="same")
+        else:
+            smoothed_data = data
+
         stream.signals[signal_index].plot.setData(
-            stream.time[-stream.scans_per_chunk : -1 : decimation],
-            stream.signals[signal_index].data[
-                -stream.scans_per_chunk : -1 : decimation
-            ],
+            stream.time[-stream.scans_per_chunk : -1 : decimation], smoothed_data
         )
 
 

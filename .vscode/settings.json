@@ -35,6 +35,7 @@
   // ! Git
   "git.allowNoVerifyCommit": true,
   "git.confirmNoVerifyCommit": false,
+  "[git-commit]": { "editor.rulers": [88] },
   // ! Line-width
   "git.inputValidation": true,
   "git.inputValidationSubjectLength": 88,

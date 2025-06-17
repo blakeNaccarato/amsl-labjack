@@ -18,13 +18,19 @@ dependencies = [
   "numpydoc>=1.7.0",
   "ruamel-yaml>=0.18.6",
   "sphinx>=7.3.7",
+  # ? Notebooks
+  "matplotlib>=3.7.2",
+  "more-itertools>=10.4.0",
+  "matplotlib>=3.7.2",
+  "pandas>=2.2.3",
+  "scipy>=1.11.2",
 ]
 [project.scripts]
 amsl-labjack-dev = "amsl_labjack_dev.__main__:main"
 
 [tool.fawltydeps]
 deps = ["packages/_dev/pyproject.toml"]
-code = ["packages/_dev", "docs", "tests"]
+code = ["packages/_dev", "docs", "notebooks", "tests"]
 ignore_undeclared = [
   "amsl_labjack_dev",
   "amsl_labjack_pipeline",
