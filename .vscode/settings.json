@@ -1,9 +1,4 @@
 {
-  //* ---------------------------------------------------------------------------- * //
-  "yaml.schemas": {
-    "https://json.schemastore.org/github-workflow.json": ["*.yml.jinja"]
-  },
-  //* ---------------------------------------------------------------------------- * //
   //! Terminal
   //? Use PowerShell on all platforms, facilitates running template scripts
   "terminal.integrated.defaultProfile.windows": "PowerShell",
@@ -295,7 +290,7 @@
     "PYTHONUTF8": "1",
     "PYTHONWARNDEFAULTENCODING": "1",
     "PYTHONWARNINGS": "ignore",
-    "TEMPLATE_REF": "2025.1.3",
+    "TEMPLATE_REF": "2025.1.3-27-g39d3a15",
     "UV_INSTALL_DIR": ".",
     "UV_NO_MODIFY_PATH": "1",
     "UV_VERSION": "0.7.2"
@@ -326,7 +321,7 @@
     "PYTHONUTF8": "1",
     "PYTHONWARNDEFAULTENCODING": "1",
     "PYTHONWARNINGS": "ignore",
-    "TEMPLATE_REF": "2025.1.3",
+    "TEMPLATE_REF": "2025.1.3-27-g39d3a15",
     "UV_INSTALL_DIR": ".",
     "UV_NO_MODIFY_PATH": "1",
     "UV_VERSION": "0.7.2"
@@ -357,7 +352,7 @@
     "PYTHONUTF8": "1",
     "PYTHONWARNDEFAULTENCODING": "1",
     "PYTHONWARNINGS": "ignore",
-    "TEMPLATE_REF": "2025.1.3",
+    "TEMPLATE_REF": "2025.1.3-27-g39d3a15",
     "UV_INSTALL_DIR": ".",
     "UV_NO_MODIFY_PATH": "1",
     "UV_VERSION": "0.7.2"

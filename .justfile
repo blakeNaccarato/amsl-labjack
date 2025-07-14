@@ -1,10 +1,16 @@
 #* Project
 copier_version :=\
   env('COPIER_VERSION', empty)
+dev_verbose :=\
+  if env('JUST_VERBOSE', empty)=='1' { true } else { false }
+dev_output_file :=\
+  env('DEV_OUTPUT_FILE', empty)
+dev_pyrightconfig_file :=\
+  env('DEV_PYRIGHTCONFIG_FILE', empty)
 github_repo_name :=\
   env('GITHUB_REPO_NAME', empty)
-output_file :=\
-  env('OUTPUT_FILE', empty)
+pre_commit_running :=\
+  if env('PRE_COMMIT', empty)=='1' { true } else { false }
 project_name :=\
   env('PROJECT_NAME', empty)
 project_owner_github_username :=\
@@ -13,6 +19,8 @@ project_version :=\
   env('PROJECT_VERSION', empty)
 template_ref :=\
   env('TEMPLATE_REF', empty)
+vscode_folder_open_task_running :=\
+  if env('VSCODE_FOLDER_OPEN_TASK', empty)=='1' { true } else { false }
 
 #* Settings
 set dotenv-load
@@ -36,12 +44,15 @@ pre :=\
   pwsh_pre + ';'
 script_pre :=\
   pwsh_pre
+_just :=\
+  './j.ps1'
+
 
 #* Python dev package
 _dev :=\
   _uvr + sp + quote(project_name + '-dev')
 
-#* ♾️  Self
+#* ♾️ Self
 
 # 📃 [DEFAULT] List recipes
 [group('♾️  Self')]
@@ -57,7 +68,7 @@ alias j := just
 
 #* ⛰️ Environments
 
-# 🏃 Run shell commands with UV synced...
+# 🏃 Run shell commands with uv synced...
 [group('⛰️ Environments')]
 run *args: uv-sync
   @{{ if args==empty { quote(YELLOW+'No command given'+NORMAL) } else {empty} }}
@@ -66,8 +77,12 @@ alias r := run
 
 # 👥 Run recipes as a contributor...
 [group('⛰️ Environments')]
-con *args: con-pre-commit-hooks uv-sync
-  {{pre}} Sync-ContribEnv
+con *args: uv-sync
+  {{pre}} Sync-ContribEnv | Out-Null
+  {{ if pre_commit_running==true { pre + _just + sp + 'con-git-submodules' } else {empty} }}
+  {{ if vscode_folder_open_task_running==true { \
+    pre + _just + sp + 'con-git-submodules' + sp + 'con-pre-commit-hooks' \
+  } else {empty} }}
   @{{ if args==empty {_no_recipe_given} else {empty} }}
   {{ if args!=empty { pre + _just + sp + args } else {empty} }}
 alias c := con
@@ -75,11 +90,11 @@ alias c := con
 # 🤖 Run recipes in CI...
 [group('⛰️ Environments')]
 ci *args: uv-sync
-  {{pre}} Sync-CiEnv
-  {{pre}} {{_dev}} elevate-pyright-warnings
+  {{pre}} Sync-CiEnv | Out-Null
+  {{pre}} {{_dev}} elevate-pyright-warnings {{dev_pyrightconfig_file}}
   {{ if args!=empty { pre + _just + sp + args } else {empty} }}
 
-# 📦 Run recipes in a devcontainer
+# 📦 Run recipes in devcontainer
 [script, group('⛰️ Environments')]
 @devcontainer *args:
   {{'#?'+BLUE+sp+'Source common shell config'+NORMAL}}
@@ -194,14 +209,12 @@ tool-docs-build:
 tool-pre-commit *args: con
   {{pre}} {{_uvr}} pre-commit run --verbose {{args}}
 alias pre-commit := tool-pre-commit
-alias pc := tool-pre-commit
 
 # 🔵 pre-commit run --all-files ...
 [group('⚙️  Tools')]
 tool-pre-commit-all *args:
   {{pre}} {{_just}} pre-commit --all-files {{args}}
 alias pre-commit-all := tool-pre-commit-all
-alias pca := tool-pre-commit-all
 
 # ✔️  Check that the working tree is clean
 [group('⚙️  Tools')]
@@ -314,7 +327,7 @@ con-update-changelog-latest-commit:
 # 🏷️  Set CI output to latest release
 [group('📤 CI Output')]
 ci-out-latest-release:
-  {{pre}} Set-Content {{output_file}} "latest_release=$( \
+  {{pre}} Set-Content {{dev_output_file}} "latest_release=$( \
     ($Latest = gh release list --limit 1 --json tagName | \
       ConvertFrom-Json | Select-Object -ExpandProperty 'tagName' \
     ) ? $Latest : '-1' \

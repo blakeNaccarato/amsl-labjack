@@ -31,7 +31,7 @@ jobs:
         with:
           name: "lock"
           path: "uv.lock"
-      - run: "./j.ps1 con tool-check-clean"
+      - run: "./j.ps1 tool-check-clean"
   build-docs:
     needs: "env"
     runs-on: "${{ needs.env.outputs.actions_runner }}"
@@ -86,8 +86,8 @@ jobs:
           version: "${{ needs.env.outputs.uv_version }}"
           enable-cache: true
       - run: |
-          ./j.ps1 ci tool-fawltydeps
-          ./j.ps1 tool-fawltydeps --config-file packages/_dev/pyproject.toml
+          ./j.ps1 ci fawltydeps
+          ./j.ps1 fawltydeps --config-file packages/_dev/pyproject.toml
   pyright:
     needs: "env"
     runs-on: "${{ needs.env.outputs.actions_runner }}"

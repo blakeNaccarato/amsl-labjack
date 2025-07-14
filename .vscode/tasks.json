@@ -61,11 +61,10 @@
   "tasks": [
     //! VSCode startup
     {
-      "label": "con ⚡👥 Contributor environment setup",
-      "command": "./j.ps1 con",
+      "label": "con ⚡👥 Contributor environment setup on folder open",
+      "command": "$Env:VSCODE_FOLDER_OPEN_TASK='1'; ./j.ps1 con",
       "runOptions": { "runOn": "folderOpen" }
     },
-
     //* 🌐 Install
     {
       "label": "inst-all 🌐 Install VSCode, GitHub CLI, Git, Windows Terminal, and cross-platform PowerShell",
@@ -116,7 +115,7 @@
 
     //* ⛰️ Environments
     {
-      "label": "run 🏃 Run shell commands with UV synced...",
+      "label": "run 🏃 Run shell commands with uv synced...",
       "command": "./j.ps1 run ${input:args}"
     },
     {
@@ -200,6 +199,10 @@
     {
       "label": "tool-pre-commit-all ⚡🔵 pre-commit run --all-files",
       "command": "./j.ps1 tool-pre-commit-all"
+    },
+    {
+      "label": "tool-check-clean ✔️ Check that the working tree is clean",
+      "command": "./j.ps1 tool-check-clean"
     },
     {
       "label": "tool-fawltydeps ✔️ fawltydeps ...",
