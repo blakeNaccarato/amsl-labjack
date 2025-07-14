@@ -152,7 +152,7 @@ wheels = [
 
 [[package]]
 name = "amsl-labjack"
-version = "0.0.0"
+version = "2025.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "labjack-ljm" },

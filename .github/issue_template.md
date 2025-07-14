@@ -10,9 +10,9 @@ Please apply the `bug` label
 
 ### Please confirm that this bug affects the latest version
 
-<!-- Please verify the issue is present in the latest version by installing it with `pip install amsl-labjack==0.0.0` and checking that the bug is still there #} -->
+<!-- Please verify the issue is present in the latest version by installing it with `pip install amsl-labjack==2025.0.0` and checking that the bug is still there #} -->
 
-- [ ] This bug affects version `0.0.0` of `amsl-labjack`.
+- [ ] This bug affects version `2025.0.0` of `amsl-labjack`.
 
 ### Please indicate which operating system(s) you are using
 

@@ -58,7 +58,7 @@ READ_RATE_RATIO = 0.1
 """Suitable ratio of read rate to nominal rate for most plot/read loops."""
 
 
-# TODO: Implement smarter selecction with noise tables https://support.labjack.com/docs/a-3-3-2-t8-noise-and-resolution-t-series-datasheet#A-3-3-2T8NoiseandResolution[T-SeriesDatasheet]-Range:%C2%B11.2V
+# TODO: Implement smarter selection with noise tables https://support.labjack.com/docs/a-3-3-2-t8-noise-and-resolution-t-series-datasheet#A-3-3-2T8NoiseandResolution[T-SeriesDatasheet]-Range:%C2%B11.2V
 
 
 def main():

@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "amsl-labjack"
-version = "0.0.0"
+version = "2025.0.0"
 authors = [{ name = "Blake Naccarato", email = "blake.naccarato@gmail.com" }]
 description = "LabJack utilities for AMSL lab"
 readme = "README.md"
@@ -277,7 +277,12 @@ reportUnusedCallResult = "none"
 
 [tool.ruff]
 cache-dir = ".cache/.ruff_cache"
-extend-exclude = ["packages/cachier", "packages/context-models", "typings"]
+extend-exclude = [
+  "packages/boilercore",
+  "packages/cachier",
+  "packages/context-models",
+  "typings",
+]
 fix = true
 output-format = "grouped"
 preview = true
