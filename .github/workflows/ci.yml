@@ -17,7 +17,7 @@ jobs:
     uses: "./.github/workflows/env.yml"
   sync:
     needs: "env"
-    runs-on: "ubuntu-24.04"
+    runs-on: "${{ needs.env.outputs.actions_runner }}"
     steps:
       - uses: "actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332" # v4.1.7
         with:
@@ -47,14 +47,16 @@ jobs:
       - run: "./j.ps1 ci tool-docs-build"
       - uses: "actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa" # v3.0.1
   deploy-docs:
-    if: github.event_name != 'pull_request'
-    needs: ["env", "build-docs"]
-    permissions:
-      pages: "write"
-      id-token: "write"
+    needs:
+      - "env"
+      - "build-docs"
     environment:
       name: "github-pages"
       url: "${{ steps.deployment.outputs.page_url }}"
+    permissions:
+      id-token: "write"
+      pages: "write"
+    if: github.event_name != 'pull_request'
     runs-on: "${{ needs.env.outputs.actions_runner }}"
     steps:
       - id: "deployment"
@@ -62,6 +64,8 @@ jobs:
   ruff:
     needs: "env"
     runs-on: "${{ needs.env.outputs.actions_runner }}"
+    env:
+      GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
     steps:
       - uses: "actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332" # v4.1.7
         with:
@@ -119,7 +123,7 @@ jobs:
         with:
           version: "${{ needs.env.outputs.uv_version }}"
           enable-cache: true
-      # ! https://github.com/pytest-dev/pytest-cov/issues/479#issuecomment-1247444988
+      #! https://github.com/pytest-dev/pytest-cov/issues/479#issuecomment-1247444988
       - if: startsWith(matrix.runner, 'ubuntu') && matrix.python == needs.env.outputs.python_version
         run: "./j.ps1 ci pytest --cov --cov-config=pyproject.toml --cov-report=xml"
       - if: startsWith(matrix.runner, 'ubuntu') && matrix.python == needs.env.outputs.python_version

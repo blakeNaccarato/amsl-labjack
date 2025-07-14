@@ -12,11 +12,11 @@ license = { file = "LICENSE" }
 requires-python = ">=3.11"
 classifiers = [
   "License :: OSI Approved :: MIT License",
-  # ? Also in CI (https://github.com/actions/python-versions/releases)
+  #? Also in CI (https://github.com/actions/python-versions/releases)
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
-  # "Programming Language :: Python :: 3.13",  # ? (via myst-nb) https://github.com/crate-py/rpds/issues/72
-  # "Programming Language :: Python :: 3.14",  # ? Not yet beta (https://peps.python.org/pep-0745)
+  # "Programming Language :: Python :: 3.13",  #? (via myst-nb) https://github.com/crate-py/rpds/issues/72
+  # "Programming Language :: Python :: 3.14",  #? Not yet beta (https://peps.python.org/pep-0745)
 ]
 dependencies = [
   "labjack-ljm>=1.23.0",
@@ -42,18 +42,19 @@ dev = [
   "fawltydeps>=0.18.0",
   "pipdeptree>=2.23.0",
   "pre-commit>=4.1.0",
-  "pyright>=1.1.401",
+  "pyright>=1.1.394",
   "ruff>=0.9.3",
   "snakeviz>=2.2.0",
   "sourcery>=1.32.0",
-  # ? For VSCode Jupyter notebooks and Data Wrangler
+  #? For VSCode Jupyter notebooks and Data Wrangler
   "ipykernel>=6.29.5",
   "ipympl>=0.9.7",
   "pandas-stubs==2.2.3.*",
+  "pandas>=2.2.3",
   "pyarrow>=17.0.0",
   "pyspark>=3.5.5",
   "sparklines>=0.4.2",
-  # ? Docs
+  #? Docs
   "linkify-it-py>=2.0.3",
   "myst-nb>=1.1.1",
   "numpydoc>=1.8.0",
@@ -68,7 +69,7 @@ dev = [
   "sphinxcontrib-mermaid>=0.9.2",
   "sphinxcontrib-towncrier>=0.5.0a0",
   "towncrier>=24.8.0",
-  # ? Tests
+  #? Tests
   "pytest-cov>=5.0.0",
   "pytest-custom-exit-code>=0.3.0",
   "pytest-github-actions-annotate-failures>=0.2.0",
@@ -78,13 +79,16 @@ dev = [
 [tool.uv]
 required-version = ">=0.7.2"
 constraint-dependencies = [
-  # ? Security
-  # ? https://nvd.nist.gov/vuln/detail/CVE-2024-37891
-  # ? via sphinx
+  #? Security
+  #? https://nvd.nist.gov/vuln/detail/CVE-2024-37891
+  #? via sphinx
   "urllib3>=2.2.2",
-  # ? Causes the following message: qt.core.qobject.connect: QObject::connect(QStyleHints, QStyleHints): unique connections require a pointer to member function of a QObject subclass
-  # ? Discussed in: https://github.com/pyqtgraph/pyqtgraph/issues/3224
-  # ? Fixed in this PR, unreleased: https://github.com/pyqtgraph/pyqtgraph/pull/3145
+  #? Intentionally don't check new dependency groups where we keep our dev deps
+  #? Avoids lots of repetition in `tool.fawltydeps.ignore_unused`
+  "fawltydeps<0.19.0",
+  #? Causes the following message: qt.core.qobject.connect: QObject::connect(QStyleHints, QStyleHints): unique connections require a pointer to member function of a QObject subclass
+  #? Discussed in: https://github.com/pyqtgraph/pyqtgraph/issues/3224
+  #? Fixed in this PR, unreleased: https://github.com/pyqtgraph/pyqtgraph/pull/3145
   "pyside6<6.7.2",
 ]
 [tool.uv.pip]
@@ -273,7 +277,7 @@ reportUnusedCallResult = "none"
 
 [tool.ruff]
 cache-dir = ".cache/.ruff_cache"
-extend-exclude = ["typings"]
+extend-exclude = ["packages/cachier", "packages/context-models", "typings"]
 fix = true
 output-format = "grouped"
 preview = true

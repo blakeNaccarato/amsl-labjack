@@ -8,16 +8,23 @@ function Sync-Uv {
     <#.SYNOPSIS
     Sync uv version.#>
     if (Get-Command './uv' -ErrorAction 'Ignore') {
-        (./uv self version) -Match "uv ([\d.]+)" | Out-Null
         $OrigForceColor = $Env:FORCE_COLOR
         $Env:FORCE_COLOR = $null
-        (./uv self version) -Match 'uv (\d)' | Out-Null
+        (./uv self version) -Match 'uv ([\d.]+)' | Out-Null
         $Env:FORCE_COLOR = $OrigForceColor
         if ($Matches[1] -eq $Env:UV_VERSION) { return }
+        $Matches = $null
     }
-    elseif (Get-Command 'uvx' -ErrorAction 'Ignore') { uvx --from "rust-just@$Env:JUST_VERSION" just inst uv }
-    elseif ($IsWindows) { powershell -ExecutionPolicy 'ByPass' -Command "Invoke-RestMethod https://astral.sh/uv/$Env:UV_VERSION/install.ps1 | Invoke-Expression" }
-    else { curl -LsSf "https://astral.sh/uv/$Env:UV_VERSION/install.sh" | sh }
+    if (Get-Command 'uvx' -ErrorAction 'Ignore') {
+        uvx --from "rust-just@$Env:JUST_VERSION" just inst uv
+        return
+    }
+    if ($IsWindows) {
+        $InstallUv = "Invoke-RestMethod https://astral.sh/uv/$Env:UV_VERSION/install.ps1 | Invoke-Expression"
+        powershell -ExecutionPolicy 'ByPass' -Command $InstallUv
+        return
+    }
+    curl -LsSf "https://astral.sh/uv/$Env:UV_VERSION/install.sh" | sh
 }
 
 function Sync-DevEnv {
@@ -46,32 +53,39 @@ function Sync-DevEnv {
 function Sync-ContribEnv {
     <#.SYNOPSIS
     Write environment variables to VSCode contributor environment.#>
-    $DevEnvJson = ''
+    $DevEnvSettingsJson = ''
+    $DevEnvWorkflowYaml = ''
     $Env:DEV_ENV -Split ';' | Select-String -Pattern '([^=]+)=([^=]+)' | ForEach-Object {
         $K, $V = $_.Matches.Groups[1].Value, $_.Matches.Groups[2].Value
-        $DevEnvJson += "`n    `"$K`": `"$V`","
+        $DevEnvSettingsJson += "`n    `"$K`": `"$V`","
+        $DevEnvWorkflowYaml += "`n      $($K.ToLower()): { value: `"$V`" }"
     }
-    $DevEnvJson = "{$($DevEnvJson.TrimEnd(','))`n  }"
+    $DevEnvSettingsJson = "{$($DevEnvSettingsJson.TrimEnd(','))`n  }"
     $Settings = '.vscode/settings.json'
     $SettingsContent = Get-Content $Settings -Raw
     foreach ($Plat in ('linux', 'osx', 'windows')) {
         $Pat = "(?m)`"terminal\.integrated\.env\.$Plat`"\s*:\s*\{[^}]*\}"
-        $Repl = "`"terminal.integrated.env.$Plat`": $DevEnvJson"
+        $Repl = "`"terminal.integrated.env.$Plat`": $DevEnvSettingsJson"
         $SettingsContent = $SettingsContent -Replace $Pat, $Repl
     }
     Set-Content $Settings $SettingsContent -NoNewline
+    $Workflow = '.github/workflows/env.yml'
+    $WorkflowPat = '(?m)^\s{4}outputs:(?:\s\{\}|(?:\n^\s{6}.+$)+)'
+    $WorkflowRepl = "    outputs:$DevEnvWorkflowYaml"
+    $WorkflowContent = (Get-Content $Workflow -Raw) -Replace $WorkflowPat, $WorkflowRepl
+    Set-Content $Workflow $WorkflowContent -NoNewline
 }
 
 function Sync-CiEnv {
     <#.SYNOPSIS
     Sync CI environment path and environment variables.#>
-    # ? Add `.venv` tools to CI path. Needed for some GitHub Actions like pyright
-    $GitHubPath = $Env:GITHUB_PATH ? $Env:GITHUB_PATH : '.dummy-ci-path-file'
-    if (!(Test-Path $GitHubPath)) { New-Item $GitHubPath }
-    if ( !(Get-Content $GitHubPath | Select-String -Pattern '.venv') ) {
-        Add-Content $GitHubPath ('.venv/bin', '.venv/scripts')
+    #? Add `.venv` tools to CI path. Needed for some GitHub Actions like pyright
+    $PathFile = $Env:GITHUB_PATH ? $Env:GITHUB_PATH : '.dummy-ci-path-file'
+    if (!(Test-Path $PathFile)) { New-Item $PathFile }
+    if ( !(Get-Content $PathFile | Select-String -Pattern '.venv') ) {
+        Add-Content $PathFile ('.venv/bin', '.venv/scripts')
     }
-    # ? Write environment variables to CI environment file
+    #? Write environment variables to CI environment file
     $EnvFile = $Env:GITHUB_ENV ? $Env:GITHUB_ENV : '.dummy-ci-env-file'
     if (!(Test-Path $EnvFile)) { New-Item $EnvFile }
     if (!(Get-Content $EnvFile | Select-String -Pattern 'DEV_ENV_SET')) {

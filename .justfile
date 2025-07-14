@@ -1,43 +1,49 @@
-# * Project
-name :=\
+#* Project
+copier_version :=\
+  env('COPIER_VERSION', empty)
+github_repo_name :=\
+  env('GITHUB_REPO_NAME', empty)
+output_file :=\
+  env('OUTPUT_FILE', empty)
+project_name :=\
   env('PROJECT_NAME', empty)
 project_owner_github_username :=\
   env('PROJECT_OWNER_GITHUB_USERNAME', empty)
-github_repo_name :=\
-  env('GITHUB_REPO_NAME', empty)
-copier_version :=\
-  env('COPIER_VERSION', empty)
+project_version :=\
+  env('PROJECT_VERSION', empty)
+template_ref :=\
+  env('TEMPLATE_REF', empty)
 
-# * Settings
+#* Settings
 set dotenv-load
 set unstable
 
-# * Imports
+#* Imports
 import 'scripts/common.just'
 
-# * Modules
-# ? 🌐 Install
+#* Modules
+#? 🌐 Install
 mod inst 'scripts/inst.just'
 
-# * Shells
+#* Shells
 set shell :=\
   ['pwsh', '-NonInteractive', '-NoProfile', '-CommandWithArgs']
 set script-interpreter :=\
   ['pwsh', '-NonInteractive', '-NoProfile']
 
-# * Reusable shell preambles
+#* Reusable shell preambles
 pre :=\
   pwsh_pre + ';'
 script_pre :=\
   pwsh_pre
 
-# * Python dev package
+#* Python dev package
 _dev :=\
-  _uvr + sp + quote(name + '-dev')
+  _uvr + sp + quote(project_name + '-dev')
 
-# * ♾️  Self
+#* ♾️  Self
 
-# 📃 [DEFAULT] List recipes.
+# 📃 [DEFAULT] List recipes
 [group('♾️  Self')]
 list:
   {{pre}} {{_just}} --list
@@ -49,13 +55,13 @@ just *args:
   {{pre}} {{_just}} {{args}}
 alias j := just
 
-# * ⛰️ Environments
+#* ⛰️ Environments
 
 # 🏃 Run shell commands with UV synced...
 [group('⛰️ Environments')]
 run *args: uv-sync
   @{{ if args==empty { quote(YELLOW+'No command given'+NORMAL) } else {empty} }}
-  {{ if args!=empty { pre + sp + args } else {empty} }}
+  -{{ if args!=empty { pre + sp + args } else {empty} }}
 alias r := run
 
 # 👥 Run recipes as a contributor...
@@ -73,28 +79,28 @@ ci *args: uv-sync
   {{pre}} {{_dev}} elevate-pyright-warnings
   {{ if args!=empty { pre + _just + sp + args } else {empty} }}
 
-# 📦 Run recipes in a devcontainer.
+# 📦 Run recipes in a devcontainer
 [script, group('⛰️ Environments')]
 @devcontainer *args:
-  {{'# ?'+BLUE+sp+'Source common shell config'+NORMAL}}
+  {{'#?'+BLUE+sp+'Source common shell config'+NORMAL}}
   {{script_pre}}
-  {{'# ?'+BLUE+sp+'Devcontainers need submodules explicitly marked as safe directories'+NORMAL}}
+  {{'#?'+BLUE+sp+'Devcontainers need submodules explicitly marked as safe directories'+NORMAL}}
   $Repo = Get-ChildItem '/workspaces'
   $Packages = Get-ChildItem "$Repo/packages"
   $SafeDirs = @($Repo) + $Packages
   foreach ($Dir in $SafeDirs) {
     if (!($SafeDirs -contains $Dir)) { git config --global --add safe.directory $Dir }
   }
-  {{ if args==empty { 'return' } else { '# ?'+BLUE+sp+'Run recipe'+NORMAL } }}
+  {{ if args==empty { 'return' } else { '#?'+BLUE+sp+'Run recipe'+NORMAL } }}
   {{ if args==empty {empty} else { _just + sp + args } }}
 alias dc := devcontainer
 
 _no_recipe_given :=\
   quote(BLACK+'No recipe given'+NORMAL)
 
-# * 🟣 uv
+#* 🟣 uv
 
-# ? Uv invocations
+#? Uv invocations
 _uv_options :=\
   '--all-packages' \
   + sp + '--python' + ( \
@@ -121,20 +127,19 @@ alias uvr := uv-run
 uvx *args:
   {{pre}} {{_uv}} {{args}}
 
-# ♻️  uv sync ...
+# 🔃 uv sync ...
 [group('🟣 uv')]
 uv-sync *args:
   {{pre}} {{_uvs}} {{args}}
 alias uvs := uv-sync
 alias sync := uv-sync
 
-# * 🐍 Python
+#* 🐍 Python
 
 # 🐍 python ...
 [group('🐍 Python')]
 py *args:
   {{pre}} {{_uvr}} 'python' {{args}}
-alias py- := py
 
 # 📦 uv run --module ...
 [group('🐍 Python')]
@@ -164,7 +169,7 @@ alias pyg := py-gui
 py-gui:
   @{{quote(GREEN+'GUI scripts'+sp+_na+NORMAL)}}
 
-# * ⚙️ Tools
+#* ⚙️ Tools
 
 # 🧪 pytest ...
 [group('⚙️  Tools')]
@@ -177,6 +182,7 @@ alias pytest := tool-pytest
 tool-docs-preview:
   {{pre}} {{_uvr}} sphinx-autobuild --show-traceback docs _site \
     {{ prepend( '--ignore', "'**/temp' '**/data' '**/apidocs' '**/*schema.json'" ) }}
+alias docs := tool-docs-preview
 
 # 📖 build docs
 [group('⚙️  Tools')]
@@ -215,38 +221,42 @@ tool-ruff *args:
   {{pre}} {{_uvr}} ruff check {{args}} .
 alias ruff := tool-ruff
 
-# * 📦 Packaging
+#* 📦 Packaging
 
 # 🛞  Build wheel, compile binary, and sign...
 [group('📦 Packaging')]
 pkg-build *args:
-  {{pre}} {{_uvr}} {{name}} {{args}}
+  {{pre}} {{_uvr}} {{project_name}} {{args}}
 alias build := pkg-build
 
-# ✨ Release new version.
+# 📜 Build changelog for new version
 [group('📦 Packaging')]
-pkg-release version:
-  {{pre}} git tag --sign -m {{quote(version)}} {{quote(version)}} && git push
+pkg-build-changelog version:
+  {{pre}} {{_templ-sync}} --data 'project_version={{version}}'
+  {{pre}} {{_uvr}} towncrier build --yes --version '{{version}}'
+  {{pre}} {{_post_template_task}}
+  -{{pre}} try { git stage 'changelog/*.md' } catch {}
+  @{{quote(YELLOW+'Changelog draft built. Please finalize it, then run `./j.ps1 pkg-release`.'+NORMAL)}}
+
+# ✨ Release the current version
+[group('📦 Packaging')]
+pkg-release:
+  {{pre}} git add --all
+  {{pre}} git commit -m '{{project_version}}'
+  {{pre}} git tag --force --sign -m {{project_version}} {{project_version}}
+  {{pre}} git push
 alias release := pkg-release
 
-# * 🧩 Templating
+#* 👥 Contributor environment setup
 
-# ♻️  Sync with template
-[group('🧩 Templating')]
-template-sync:
-  {{_uvx}} 'copier@9.7.1' update --vcs-ref=HEAD
-
-
-# * 👥 Contributor environment setup
-
-# 👥 Update Git submodules.
+# 👥 Update Git submodules
 [group('👥 Contributor environment setup')]
 con-git-submodules:
   {{pre}} Get-ChildItem '.git/modules' -Filter 'config.lock' -Recurse -Depth 1 | \
       Remove-Item
   {{pre}} git submodule update --init --merge
 
-# 👥 Install pre-commit hooks.
+# 👥 Install pre-commit hooks
 [group('👥 Contributor environment setup')]
 con-pre-commit-hooks:
   {{pre}} if ( \
@@ -256,16 +266,15 @@ con-pre-commit-hooks:
     ) -Contains $False \
   ) { \
     {{_uvr}} pre-commit install --install-hooks | Out-Null; \
-    {{ quote(GREEN + 'Pre-commit hooks installed.' + NORMAL) }} \
+    {{quote(GREEN + 'Pre-commit hooks installed.' + NORMAL)}} \
   }
 hooks :=\
   'pre-commit'
 
-# 👥 Normalize line endings.
+# 👥 Normalize line endings
 [group('👥 Contributor environment setup')]
 con-norm-line-endings:
-  {{pre}} try { {{_uvr}} pre-commit run mixed-line-ending --all-files | Out-Null } \
-  catch [System.Management.Automation.NativeCommandExitException] {}
+  -{{pre}} try { {{_uvr}} pre-commit run mixed-line-ending --all-files | Out-Null } catch {}
 
 # 👥 Run dev task...
 [group('👥 Contributor environment setup')]
@@ -274,7 +283,7 @@ con-dev *args:
 alias dev := con-dev
 alias d := con-dev
 
-# 👥 Update changelog
+# 👥 Update changelog...
 [group('👥 Contributor environment setup')]
 con-update-changelog change_type:
  {{pre}} {{_dev}} add-change {{change_type}}
@@ -283,22 +292,121 @@ con-update-changelog change_type:
 [group('👥 Contributor environment setup')]
 con-update-changelog-latest-commit:
   {{pre}} {{_uvr}} towncrier create \
-    "$((Get-Date).ToUniversalTime().ToString('o').Replace(':','-')).change.md" \
+    "+$((Get-Date).ToUniversalTime().ToString('o').Replace(':','-')).change.md" \
     --content ( \
       "$(git log -1 --format='%s') ([$(git rev-parse --short HEAD)]" \
-      + '(https://github.com/{{ project_owner_github_username }}/{{ github_repo_name }}' \
-        + "/commit/$(git rev-parse HEAD)))`n" \
+      + '(' \
+        + 'https://github.com/{{project_owner_github_username}}/{{github_repo_name}}' \
+        + "/commit/$(git rev-parse HEAD))" \
+      + ')' \
+      + "`n" \
     )
 
-# * 💻 Machine setup
+#* 📤 CI Output
 
-# 👤 Set Git username and email.
+# 🏷️  Set CI output to latest release
+[group('📤 CI Output')]
+ci-out-latest-release:
+  {{pre}} Set-Content {{output_file}} "latest_release=$( \
+    ($Latest = gh release list --limit 1 --json tagName | \
+      ConvertFrom-Json | Select-Object -ExpandProperty 'tagName' \
+    ) ? $Latest : '-1' \
+  )"
+
+#* 🧩 Templating
+
+# ⬆️  Update from template
+[group('🧩 Templating')]
+templ-update:
+  {{pre}} {{_update_template}} --defaults
+  {{pre}} {{_post_template_task}}
+
+# ⬆️  Update from template (prompt)
+[group('🧩 Templating')]
+templ-update-prompt:
+  {{pre}} {{_update_template}}
+  {{pre}} {{_post_template_task}}
+
+# 🔃 Sync with current template
+[group('🧩 Templating')]
+templ-sync:
+  {{pre}} {{_templ-sync}}
+  {{pre}} {{_post_template_task}}
+_templ-sync :=\
+  _sync_template + sp + '--defaults'
+
+# 🔃 Sync with current template (prompt)
+[group('🧩 Templating')]
+templ-sync-prompt:
+  {{pre}} {{_sync_template}}
+  {{pre}} {{_post_template_task}}
+
+# ➡️  Recopy current template
+[group('🧩 Templating')]
+templ-recopy:
+  {{pre}} {{_recopy_template}} --defaults
+  {{pre}} {{_post_template_task}}
+
+# ➡️  Recopy current template (prompt)
+[group('🧩 Templating')]
+templ-recopy-prompt:
+  {{pre}} {{_recopy_template}}
+  {{pre}} {{_post_template_task}}
+
+_update_template :=\
+  _copier_update + sp + _latest_template
+_sync_template :=\
+  _copier_update + sp + _current_template
+_recopy_template :=\
+  _copier_recopy + sp + _current_template
+_post_template_task :=\
+  'git add --all; git reset;' + sp + _just + sp + 'con'
+_latest_template :=\
+  quote('--vcs-ref=HEAD')
+_current_template :=\
+  quote('--vcs-ref=' + template_ref)
+_copier_recopy :=\
+  _copier + sp + 'recopy'
+_copier_update :=\
+  _copier + sp + 'update'
+_copier :=\
+  _uvx + sp + quote('copier@' + copier_version)
+
+#* 🛠️ Repository setup
+
+# 🥾 Initialize repository
+[script, group('🛠️ Repository setup')]
+@repo-init:
+  {{'#?'+BLUE+sp+'Source common shell config'+NORMAL}}
+  {{script_pre}}
+  {{'#?'+BLUE+sp+'Initialize repo and set up remote if repo is fresh'+NORMAL}}
+  git init
+  try { git rev-parse HEAD } catch {
+    gh repo create --public --source '.'
+    (Get-Content -Raw '.copier-answers.yml') -Match '(?m)^project_description:\s(.+\n(?:\s{4}.+)*)'
+    if ($Matches) {
+    }
+    gh repo edit --description ($Matches[1] -Replace "`n", ' ' -Replace ' {4}', '')
+    $Matches = $null
+    gh repo edit --homepage 'https://{{project_owner_github_username}}.github.io/{{github_repo_name}}/'
+  }
+  {{'#?'+BLUE+sp+'Set up repo and push'+NORMAL}}
+  git submodule add --force --name 'typings' 'https://github.com/softboiler/python-type-stubs.git' 'typings'
+  {{_just}} con
+  git add --all
+  try { git commit --no-verify -m 'Prepare template using softboiler/copier-pipeline' }
+  catch {}
+  git push
+
+#* 💻 Machine setup
+
+# 👤 Set Git username and email
 [group('💻 Machine setup')]
 setup-git username email:
   {{pre}} git config --global user.name {{quote(username)}}
   {{pre}} git config --global user.email {{quote(email)}}
 
-# 👤 Configure Git as recommended.
+# 👤 Configure Git as recommended
 [group('💻 Machine setup')]
 setup-git-recs:
   {{pre}} git config --global fetch.prune true
@@ -306,16 +414,16 @@ setup-git-recs:
   {{pre}} git config --global push.autoSetupRemote true
   {{pre}} git config --global push.followTags true
 
-# 🔑 Log in to GitHub API.
+# 🔑 Log in to GitHub API
 [group('💻 Machine setup')]
 setup-gh:
   {{pre}} gh auth login
 
-# 🔓 Allow running local PowerShell scripts.
+# 🔓 Allow running local PowerShell scripts
 [windows, group('💻 Machine setup')]
 setup-scripts:
   {{pre}} Set-ExecutionPolicy -Scope 'CurrentUser' 'RemoteSigned'
-# ❌ Allow running local PowerShell scripts.
+# ❌ Allow running local PowerShell scripts
 [linux, macos, group('❌ Machine setup (N/A for this OS)')]
 setup-scripts:
   @{{quote(GREEN+'Allowing local PowerShell scripts to run'+sp+_na+NORMAL)}}

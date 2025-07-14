@@ -3,5 +3,21 @@
   "contributorsPerLine": 7,
   "files": ["CONTRIBUTORS.md", "README.md"],
   "projectName": "amsl-labjack",
-  "projectOwner": "blakeNaccarato"
+  "projectOwner": "blakeNaccarato",
+  "contributors": [
+    {
+      "login": "blakeNaccarato",
+      "name": "Blake Naccarato",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20692450?v=4",
+      "profile": "https://www.blakenaccarato.com/",
+      "contributions": ["code"]
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/53017403?v=4",
+      "contributions": ["code"],
+      "login": "nminaian",
+      "name": "nminaian",
+      "profile": "https://github.com/nminaian"
+    }
+  ]
 }
