@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 <!-- towncrier release notes start -->
 
+## [2025.0.1](https://github.com/blakeNaccarato/amsl-labjack/tree/2025.0.1)
+
+Update citation.
+
 ## [2025.0.0](https://github.com/blakeNaccarato/amsl-labjack/tree/2025.0.0)
 
 Initial release with hard-coded values for single study. Python package `src/amsl_labjack/__main__.py` implements data logging, `notebooks/preview.ipynb` implements post-processing. Next release will set up `amsl_labjack` as a CLI for use with arbitrary devices.

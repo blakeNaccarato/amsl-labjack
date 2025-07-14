@@ -1,5 +1,10 @@
 cff-version: "1.2.0"
-message: "If you use this software, please cite it as below."
+title: "amsl-labjack"
+url: "https://github.com/blakeNaccarato/amsl-labjack"
+identifiers:
+  - type: "doi"
+    value: "10.5281/zenodo.15886615"
+date-released: 2025-07-14
 authors:
   - family-names: "Naccarato"
     given-names: "Blake"
@@ -10,7 +15,3 @@ authors:
   - family-names: "Kim"
     given-names: "Kwang"
     orcid: "https://orcid.org/0000-0003-2134-4964"
-title: "amsl-labjack"
-date-released: 2025-07-14
-url: "https://github.com/blakeNaccarato/amsl-labjack"
-doi: "10.5281/zenodo.15886615"
