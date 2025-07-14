@@ -6,9 +6,11 @@ authors:
     orcid: "https://orcid.org/0000-0003-4851-4724"
   - family-names: "Minaian"
     given-names: "Nazanin"
+    orcid: "https://orcid.org/0000-0001-5702-3148"
   - family-names: "Kim"
     given-names: "Kwang"
     orcid: "https://orcid.org/0000-0003-2134-4964"
-title: "boilercv"
+title: "amsl-labjack"
 date-released: 2025-07-14
 url: "https://github.com/blakeNaccarato/amsl-labjack"
+doi: "10.5281/zenodo.15886615"
